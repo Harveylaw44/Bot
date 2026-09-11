@@ -73,6 +73,14 @@ export function round1(n) {
   return Math.round(n * 10) / 10;
 }
 
+export function formatMl(ml) {
+  if (ml >= 1000) {
+    const l = ml / 1000;
+    return `${l % 1 === 0 ? l : l.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}L`;
+  }
+  return `${ml}ml`;
+}
+
 // Trailing N-calendar-day average, computed per point from however many
 // entries actually fall in that window — not a fixed entry count, since
 // weigh-ins aren't always daily. points: [{date, value}], chronological.

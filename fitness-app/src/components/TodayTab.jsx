@@ -9,12 +9,16 @@ import {
   getLastNDaysTotals,
   getLoggingStreak,
   getGymStreak,
+  getWaterEntries,
+  addWater,
+  deleteWater,
   todayISO,
 } from '../storage.js';
 import { ProgressBar, DeleteButton, EmptyState, CalorieBarChart } from './shared.jsx';
 import QuickAddSheet from './QuickAddSheet.jsx';
-import { IconMeals, IconCardio, IconScale, IconCamera, IconFire, IconGym } from './icons.jsx';
-import { calorieStatus, macroStatus, formatTime } from '../utils.js';
+import CalendarSection from './CalendarSection.jsx';
+import { IconMeals, IconCardio, IconScale, IconCamera, IconFire, IconGym, IconDroplet, IconX } from './icons.jsx';
+import { calorieStatus, macroStatus, formatTime, formatMl, clampPct } from '../utils.js';
 import { downscaleImage } from '../imageUtils.js';
 
 export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
@@ -23,6 +27,7 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
   const [last7, setLast7] = useState([]);
   const [loggingStreak, setLoggingStreak] = useState(0);
   const [gymStreak, setGymStreak] = useState(0);
+  const [waterEntries, setWaterEntries] = useState([]);
   const [sheet, setSheet] = useState(null); // 'cardio' | 'weight' | null
   const date = todayISO();
 
@@ -32,7 +37,21 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
     setLast7(getLastNDaysTotals(7));
     setLoggingStreak(getLoggingStreak());
     setGymStreak(getGymStreak());
+    setWaterEntries(getWaterEntries().filter((w) => w.date === date));
   }, [refreshTick]);
+
+  const waterTotal = waterEntries.reduce((s, w) => s + w.amount, 0);
+
+  const handleAddWater = (amount) => {
+    addWater(amount);
+    onDataChange();
+  };
+
+  const handleUndoWater = () => {
+    if (waterEntries.length === 0) return;
+    deleteWater(waterEntries[0].id);
+    onDataChange();
+  };
 
   const eaten = entries
     .filter((e) => e.type === 'meal')
@@ -127,6 +146,45 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
         </div>
       </div>
 
+      <div className="card" style={{ marginBottom: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 14.5 }}>
+            <IconDroplet style={{ width: 17, height: 17, color: 'var(--blue)' }} />
+            Water
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dim)' }}>
+            {formatMl(waterTotal)} / {formatMl(settings.waterGoalMl)}
+          </span>
+        </div>
+        <div className="progress-track" style={{ marginBottom: 12 }}>
+          <div
+            className="progress-fill"
+            style={{ width: `${clampPct(waterTotal, settings.waterGoalMl)}%`, background: 'var(--blue)' }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button className="chip" onClick={() => handleAddWater(250)}>
+            +250ml
+          </button>
+          <button className="chip" onClick={() => handleAddWater(500)}>
+            +500ml
+          </button>
+          <button className="chip" onClick={() => handleAddWater(1000)}>
+            +1L
+          </button>
+          {waterEntries.length > 0 && (
+            <button
+              className="icon-btn"
+              onClick={handleUndoWater}
+              aria-label="Undo last"
+              style={{ marginLeft: 'auto' }}
+            >
+              <IconX />
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="section-label">Quick Add</div>
       <div className="quick-add-grid" style={{ marginBottom: 4 }}>
         <button className="quick-add-btn" onClick={() => goToTab('meals')}>
@@ -180,9 +238,12 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
       )}
 
       <div className="section-label">Last 7 Days</div>
-      <div className="card">
+      <div className="card" style={{ marginBottom: 18 }}>
         <CalorieBarChart days={last7} goal={settings.calorieGoal} />
       </div>
+
+      <div className="section-label">Calendar</div>
+      <CalendarSection refreshTick={refreshTick} />
 
       {sheet && (
         <QuickAddSheet

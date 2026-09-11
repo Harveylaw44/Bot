@@ -168,6 +168,14 @@ export function IconX(props) {
   );
 }
 
+export function IconDroplet(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M12 3s7 7.5 7 12a7 7 0 0 1-14 0c0-4.5 7-12 7-12Z" />
+    </svg>
+  );
+}
+
 export function IconPencil(props) {
   return (
     <svg {...common} {...props}>

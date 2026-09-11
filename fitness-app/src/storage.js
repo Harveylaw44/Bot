@@ -14,6 +14,7 @@ const KEYS = {
   supplementLog: 'fittrack_supplement_log',
   measurementTypes: 'fittrack_measurement_types',
   measurements: 'fittrack_measurements',
+  water: 'fittrack_water',
 };
 
 function read(key, fallback) {
@@ -39,6 +40,7 @@ export const DEFAULT_SETTINGS = {
   proteinGoal: 150,
   carbGoal: 250,
   fatGoal: 80,
+  waterGoalMl: 3000,
   units: 'metric', // 'metric' (kg/cm) | 'imperial' (lbs/ft-in)
   // Profile fields, only used to prefill the goals calculator next time.
   sex: 'male',
@@ -312,6 +314,30 @@ export function deleteMeasurement(id) {
   return next;
 }
 
+export function getWaterEntries() {
+  return read(KEYS.water, []);
+}
+
+export function addWater(amountMl) {
+  const all = getWaterEntries();
+  const entry = { id: crypto.randomUUID(), date: todayISO(), amount: amountMl, time: Date.now() };
+  const next = [entry, ...all];
+  write(KEYS.water, next);
+  return next;
+}
+
+export function deleteWater(id) {
+  const next = getWaterEntries().filter((w) => w.id !== id);
+  write(KEYS.water, next);
+  return next;
+}
+
+export function getWaterTotalForDate(date) {
+  return getWaterEntries()
+    .filter((w) => w.date === date)
+    .reduce((sum, w) => sum + w.amount, 0);
+}
+
 const MAX_STREAK_LOOKBACK = 3650; // 10 years — a safety cap, not a real limit
 
 // A day counts toward the logging streak if any food (meal or ingredient)
@@ -360,6 +386,7 @@ export function exportAllData() {
     supplementLog: getSupplementLog(),
     measurementTypes: getMeasurementTypes(),
     measurements: getMeasurements(),
+    water: getWaterEntries(),
   };
 }
 
@@ -377,4 +404,5 @@ export function importAllData(data) {
   if (data.supplementLog) write(KEYS.supplementLog, data.supplementLog);
   if (data.measurementTypes) write(KEYS.measurementTypes, data.measurementTypes);
   if (data.measurements) write(KEYS.measurements, data.measurements);
+  if (data.water) write(KEYS.water, data.water);
 }

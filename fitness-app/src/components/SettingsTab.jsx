@@ -12,6 +12,8 @@ export default function SettingsTab({ refreshTick, onDataChange }) {
   const [fatGoal, setFatGoal] = useState(settings.fatGoal);
   const [goalsStatus, setGoalsStatus] = useState(null);
   const [showCalc, setShowCalc] = useState(false);
+  const [waterGoal, setWaterGoal] = useState(settings.waterGoalMl);
+  const [waterStatus, setWaterStatus] = useState(null);
 
   useEffect(() => {
     const s = getSettings();
@@ -20,6 +22,7 @@ export default function SettingsTab({ refreshTick, onDataChange }) {
     setProteinGoal(s.proteinGoal);
     setCarbGoal(s.carbGoal);
     setFatGoal(s.fatGoal);
+    setWaterGoal(s.waterGoalMl);
   }, [refreshTick]);
 
   const handleUnitsChange = (units) => {
@@ -56,6 +59,26 @@ export default function SettingsTab({ refreshTick, onDataChange }) {
     onDataChange();
     setGoalsStatus('Goals calculated and saved.');
     setTimeout(() => setGoalsStatus(null), 2500);
+  };
+
+  const handleSaveWater = () => {
+    const next = { ...settings, waterGoalMl: Number(waterGoal) || 0 };
+    saveSettings(next);
+    setSettings(next);
+    onDataChange();
+    setWaterStatus('Water goal saved.');
+    setTimeout(() => setWaterStatus(null), 2000);
+  };
+
+  const handleSuggestWater = () => {
+    const latestKg = getWeights()[0]?.kg;
+    if (!latestKg) {
+      setWaterStatus('Log a weight first so this can be based on your bodyweight.');
+      setTimeout(() => setWaterStatus(null), 3000);
+      return;
+    }
+    const suggested = Math.round((latestKg * 35) / 50) * 50; // ~35ml/kg, rounded to nearest 50ml
+    setWaterGoal(suggested);
   };
 
   const handleBackup = async () => {
@@ -168,6 +191,28 @@ export default function SettingsTab({ refreshTick, onDataChange }) {
 
         {goalsStatus && (
           <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>{goalsStatus}</div>
+        )}
+      </div>
+
+      <div className="section-label">Water Goal</div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <input
+          type="number"
+          inputMode="numeric"
+          placeholder="Water goal (ml)"
+          value={waterGoal}
+          onChange={(e) => setWaterGoal(e.target.value)}
+          style={{ ...fieldStyle, marginBottom: 12 }}
+        />
+        <button className="btn btn-primary btn-block" onClick={handleSaveWater} style={{ marginBottom: 10 }}>
+          Save Water Goal
+        </button>
+        <button className="btn btn-secondary btn-block" onClick={handleSuggestWater}>
+          Suggest from Weight (~35ml/kg)
+        </button>
+
+        {waterStatus && (
+          <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: 'var(--blue)' }}>{waterStatus}</div>
         )}
       </div>
 
