@@ -263,6 +263,21 @@ export default function SettingsTab({ refreshTick, onDataChange }) {
         </p>
       </div>
 
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '24px 0 8px' }}>
+        <img
+          src={`${import.meta.env.BASE_URL}poppy.jpg`}
+          alt="Poppy"
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            objectFit: 'cover',
+            border: '2px solid var(--border)',
+          }}
+        />
+        <span style={{ fontSize: 12.5, color: 'var(--text-faint)', fontWeight: 600 }}>Poppy 🐾</span>
+      </div>
+
       {showCalc && (
         <GoalsCalculatorSheet
           initial={settings}
