@@ -5,13 +5,30 @@ export default function SettingsTab({ onDataChange }) {
   const fileInputRef = useRef(null);
   const [status, setStatus] = useState(null);
 
-  const handleBackup = () => {
+  const handleBackup = async () => {
     const data = exportAllData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const filename = `fittrack-backup-${data.exportedAt.slice(0, 10)}.json`;
+    const json = JSON.stringify(data, null, 2);
+
+    // iOS home-screen apps can't reliably save an <a download> file — the
+    // share sheet (Save to Files / AirDrop / Mail) is the path that works there.
+    const file = new File([json], filename, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'FitTrack Backup' });
+        setStatus({ type: 'ok', text: 'Backup ready — choose "Save to Files" to keep it safe.' });
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // user closed the share sheet
+        // fall through to the download fallback below
+      }
+    }
+
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `fittrack-backup-${data.exportedAt.slice(0, 10)}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -77,12 +94,13 @@ export default function SettingsTab({ onDataChange }) {
           device, in your browser.
         </p>
         <p style={instructionStyle}>
-          <strong>Backup Data</strong> saves everything to a single .json file you can keep
-          somewhere safe (email, cloud drive, files app).
+          <strong>Backup Data</strong> packages everything into one .json file. On iPhone
+          this opens the share sheet — pick <strong>Save to Files</strong> (or AirDrop/Mail
+          it to yourself) so it's kept somewhere safe, not just on this device.
         </p>
         <p style={{ ...instructionStyle, marginBottom: 0 }}>
           <strong>Restore Data</strong> loads a previously saved .json file back into the
-          app — useful after clearing your browser or switching devices.
+          app — useful after clearing your browser, reinstalling, or switching devices.
         </p>
       </div>
     </>
