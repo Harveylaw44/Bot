@@ -18,6 +18,7 @@
   --red: #ff5c5c;
   --red-dim: #4a2323;
   --blue: #4d9bff;
+  --blue-dim: #1c3552;
 
   --radius: 16px;
   --radius-sm: 10px;
@@ -531,6 +532,41 @@ input {
   height: 4px;
   border-radius: 50%;
   background: currentColor;
+}
+
+/* ---------- Skip timer ---------- */
+
+.timer-clock {
+  font-size: 64px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.timer-phase-badge {
+  display: inline-block;
+  margin: 0 auto 6px;
+  padding: 5px 16px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.6px;
+}
+
+@keyframes timer-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+.timer-clock.pulsing {
+  animation: timer-pulse 1s ease-in-out infinite;
 }
 
 /* ---------- Modal ---------- */

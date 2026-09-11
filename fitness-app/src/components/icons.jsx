@@ -176,6 +176,16 @@ export function IconDroplet(props) {
   );
 }
 
+export function IconTimer(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l3 2" />
+      <path d="M9 2h6M12 2v3" />
+    </svg>
+  );
+}
+
 export function IconPencil(props) {
   return (
     <svg {...common} {...props}>

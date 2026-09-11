@@ -17,7 +17,18 @@ import {
 import { ProgressBar, DeleteButton, EmptyState, CalorieBarChart } from './shared.jsx';
 import QuickAddSheet from './QuickAddSheet.jsx';
 import CalendarSection from './CalendarSection.jsx';
-import { IconMeals, IconCardio, IconScale, IconCamera, IconFire, IconGym, IconDroplet, IconX } from './icons.jsx';
+import SkipTimerSheet from './SkipTimerSheet.jsx';
+import {
+  IconMeals,
+  IconCardio,
+  IconScale,
+  IconCamera,
+  IconFire,
+  IconGym,
+  IconDroplet,
+  IconX,
+  IconTimer,
+} from './icons.jsx';
 import { calorieStatus, macroStatus, formatTime, formatMl, clampPct } from '../utils.js';
 import { downscaleImage } from '../imageUtils.js';
 
@@ -203,6 +214,14 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
           <IconCamera />
           Photo
         </button>
+        <button
+          className="quick-add-btn"
+          onClick={() => setSheet('timer')}
+          style={{ gridColumn: '1 / -1', flexDirection: 'row', gap: 8 }}
+        >
+          <IconTimer />
+          Skip Timer
+        </button>
       </div>
       <input
         id="quick-photo-input"
@@ -245,7 +264,9 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
       <div className="section-label">Calendar</div>
       <CalendarSection refreshTick={refreshTick} />
 
-      {sheet && (
+      {sheet === 'timer' && <SkipTimerSheet onClose={() => setSheet(null)} onDataChange={onDataChange} />}
+
+      {(sheet === 'cardio' || sheet === 'weight') && (
         <QuickAddSheet
           variant={sheet}
           onClose={() => setSheet(null)}

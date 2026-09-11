@@ -15,6 +15,7 @@ const KEYS = {
   measurementTypes: 'fittrack_measurement_types',
   measurements: 'fittrack_measurements',
   water: 'fittrack_water',
+  timerSettings: 'fittrack_timer_settings',
 };
 
 function read(key, fallback) {
@@ -338,6 +339,17 @@ export function getWaterTotalForDate(date) {
     .reduce((sum, w) => sum + w.amount, 0);
 }
 
+// Defaults to 45s work / 15s rest / 5 rounds = 5 minutes total.
+export const DEFAULT_TIMER_SETTINGS = { workSec: 45, restSec: 15, rounds: 5 };
+
+export function getTimerSettings() {
+  return { ...DEFAULT_TIMER_SETTINGS, ...read(KEYS.timerSettings, {}) };
+}
+
+export function saveTimerSettings(settings) {
+  write(KEYS.timerSettings, settings);
+}
+
 const MAX_STREAK_LOOKBACK = 3650; // 10 years — a safety cap, not a real limit
 
 // A day counts toward the logging streak if any food (meal or ingredient)
@@ -387,6 +399,7 @@ export function exportAllData() {
     measurementTypes: getMeasurementTypes(),
     measurements: getMeasurements(),
     water: getWaterEntries(),
+    timerSettings: getTimerSettings(),
   };
 }
 
@@ -405,4 +418,5 @@ export function importAllData(data) {
   if (data.measurementTypes) write(KEYS.measurementTypes, data.measurementTypes);
   if (data.measurements) write(KEYS.measurements, data.measurements);
   if (data.water) write(KEYS.water, data.water);
+  if (data.timerSettings) write(KEYS.timerSettings, data.timerSettings);
 }
