@@ -20,6 +20,16 @@ function computeNext(phase, round, rounds, workSec, restSec) {
 
 export default function SkipTimerSheet({ onClose, onDataChange }) {
   const [config, setConfig] = useState(getTimerSettings());
+  // Editable fields hold raw strings, not numbers — a controlled number
+  // input that coerces "" to a fallback on every keystroke can never be
+  // cleared to retype, since it snaps back to that fallback the instant
+  // the field is empty. Parsed into `config` (numbers) only when Start
+  // is pressed.
+  const [draft, setDraft] = useState({
+    workSec: String(config.workSec),
+    restSec: String(config.restSec),
+    rounds: String(config.rounds),
+  });
   const [status, setStatus] = useState('idle'); // 'idle' | 'running' | 'paused' | 'done'
   const [phase, setPhase] = useState('work');
   const [round, setRound] = useState(1);
@@ -75,10 +85,21 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
   }, [status]);
 
   const start = () => {
-    saveTimerSettings(config);
+    const numeric = {
+      workSec: Math.max(1, Number(draft.workSec) || 0),
+      restSec: Math.max(0, Number(draft.restSec) || 0),
+      rounds: Math.max(1, Number(draft.rounds) || 1),
+    };
+    setConfig(numeric);
+    setDraft({
+      workSec: String(numeric.workSec),
+      restSec: String(numeric.restSec),
+      rounds: String(numeric.rounds),
+    });
+    saveTimerSettings(numeric);
     setPhase('work');
     setRound(1);
-    setPhaseSecondsLeft(config.workSec);
+    setPhaseSecondsLeft(numeric.workSec);
     setElapsedSec(0);
     setLogged(false);
     setStatus('running');
@@ -88,14 +109,6 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
   const pause = () => setStatus('paused');
   const resume = () => setStatus('running');
   const stopEarly = () => setStatus('done');
-  const reset = () => {
-    setStatus('idle');
-    setPhase('work');
-    setRound(1);
-    setPhaseSecondsLeft(config.workSec);
-    setElapsedSec(0);
-    setLogged(false);
-  };
 
   const weightKg = getWeights()[0]?.kg ?? 70;
   const estimatedCalories = estimateCaloriesBurned(11.8, weightKg, elapsedSec / 60);
@@ -106,7 +119,10 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
     onDataChange();
   };
 
-  const totalConfigured = config.rounds * config.workSec + Math.max(config.rounds - 1, 0) * config.restSec;
+  const draftWork = Math.max(0, Number(draft.workSec) || 0);
+  const draftRest = Math.max(0, Number(draft.restSec) || 0);
+  const draftRounds = Math.max(1, Number(draft.rounds) || 1);
+  const totalConfigured = draftRounds * draftWork + Math.max(draftRounds - 1, 0) * draftRest;
 
   return (
     <div className="modal-backdrop" onClick={status === 'idle' ? onClose : undefined}>
@@ -130,8 +146,8 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
                 <input
                   type="number"
                   inputMode="numeric"
-                  value={config.workSec}
-                  onChange={(e) => setConfig((c) => ({ ...c, workSec: Number(e.target.value) || 0 }))}
+                  value={draft.workSec}
+                  onChange={(e) => setDraft((d) => ({ ...d, workSec: e.target.value }))}
                   style={fieldStyle}
                 />
               </div>
@@ -140,8 +156,8 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
                 <input
                   type="number"
                   inputMode="numeric"
-                  value={config.restSec}
-                  onChange={(e) => setConfig((c) => ({ ...c, restSec: Number(e.target.value) || 0 }))}
+                  value={draft.restSec}
+                  onChange={(e) => setDraft((d) => ({ ...d, restSec: e.target.value }))}
                   style={fieldStyle}
                 />
               </div>
@@ -150,8 +166,8 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
                 <input
                   type="number"
                   inputMode="numeric"
-                  value={config.rounds}
-                  onChange={(e) => setConfig((c) => ({ ...c, rounds: Number(e.target.value) || 1 }))}
+                  value={draft.rounds}
+                  onChange={(e) => setDraft((d) => ({ ...d, rounds: e.target.value }))}
                   style={fieldStyle}
                 />
               </div>
