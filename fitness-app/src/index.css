@@ -1,0 +1,394 @@
+:root {
+  color-scheme: dark;
+
+  --bg: #0d0f12;
+  --bg-elevated: #16191e;
+  --bg-card: #1c2027;
+  --bg-card-hover: #242933;
+  --border: #2a2f38;
+
+  --text: #f2f3f5;
+  --text-dim: #9aa1ac;
+  --text-faint: #666d78;
+
+  --green: #3ddc84;
+  --green-dim: #234a35;
+  --yellow: #f5c451;
+  --yellow-dim: #4a4023;
+  --red: #ff5c5c;
+  --red-dim: #4a2323;
+  --blue: #4d9bff;
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --nav-height: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.screen {
+  flex: 1;
+  padding: 20px 16px calc(var(--nav-height) + var(--safe-bottom) + 24px);
+  overflow-y: auto;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 4px 0 18px;
+}
+
+/* ---------- Bottom nav ---------- */
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  display: flex;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  z-index: 50;
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.2px;
+}
+
+.nav-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.nav-btn.active {
+  color: var(--green);
+}
+
+/* ---------- Cards / shared ---------- */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 22px 0 10px;
+}
+
+.section-label:first-child {
+  margin-top: 0;
+}
+
+/* ---------- Progress bars ---------- */
+
+.progress-row {
+  margin-bottom: 14px;
+}
+
+.progress-row:last-child {
+  margin-bottom: 0;
+}
+
+.progress-row-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.progress-row-head .label {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.progress-row-head .value {
+  color: var(--text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-track {
+  height: 10px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #04140b;
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.btn-block {
+  width: 100%;
+  display: block;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Quick add grid ---------- */
+
+.quick-add-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-add-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.quick-add-btn svg {
+  width: 24px;
+  height: 24px;
+  color: var(--green);
+}
+
+.quick-add-btn:active {
+  background: var(--bg-card-hover);
+}
+
+/* ---------- List rows (meals logged, weights, etc) ---------- */
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.list-row:active {
+  background: var(--bg-card-hover);
+}
+
+.list-row .main {
+  min-width: 0;
+}
+
+.list-row .title {
+  font-weight: 700;
+  font-size: 14.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-row .sub {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.list-row .right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.list-row .amount {
+  font-weight: 700;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.delete-x {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: none;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.delete-x:active {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 13.5px;
+  padding: 28px 10px;
+}
+
+/* ---------- Badges / pills ---------- */
+
+.pill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pill-green {
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.pill-yellow {
+  background: var(--yellow-dim);
+  color: var(--yellow);
+}
+
+.pill-red {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+/* ---------- Modal ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-elevated);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 18px calc(24px + var(--safe-bottom));
+  animation: sheet-up 0.18s ease-out;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+}

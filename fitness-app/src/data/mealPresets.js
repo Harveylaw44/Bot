@@ -1,0 +1,42 @@
+export const MEAL_PRESETS = [
+  {
+    id: 'chicken-rice',
+    name: 'Chicken & Rice',
+    calories: 620,
+    protein: 52,
+    carbs: 70,
+    fat: 12,
+  },
+  {
+    id: 'minced-beef-pasta',
+    name: 'Minced Beef Pasta',
+    calories: 710,
+    protein: 45,
+    carbs: 78,
+    fat: 22,
+  },
+  {
+    id: 'eggs-bread',
+    name: 'Eggs & Bread',
+    calories: 420,
+    protein: 26,
+    carbs: 38,
+    fat: 18,
+  },
+  {
+    id: 'tuna-pasta',
+    name: 'Tuna Pasta',
+    calories: 560,
+    protein: 40,
+    carbs: 65,
+    fat: 10,
+  },
+  {
+    id: 'oats-yogurt',
+    name: 'Oats & Yogurt',
+    calories: 380,
+    protein: 24,
+    carbs: 52,
+    fat: 8,
+  },
+];
