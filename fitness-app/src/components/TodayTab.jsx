@@ -132,7 +132,7 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
         onChange={handlePhotoFile}
       />
 
-      <div className="section-label">Today's Meals</div>
+      <div className="section-label">Log</div>
       {entries.length === 0 ? (
         <EmptyState>Nothing logged yet — tap Quick Add above</EmptyState>
       ) : (

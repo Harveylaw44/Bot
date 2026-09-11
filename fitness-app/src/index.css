@@ -342,6 +342,55 @@ input {
   color: var(--red);
 }
 
+/* ---------- Segmented control ---------- */
+
+.segmented {
+  display: flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  margin-bottom: 16px;
+}
+
+.segmented button {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 13.5px;
+  padding: 9px 0;
+  border-radius: 8px;
+}
+
+.segmented button.active {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: none;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.icon-btn:active {
+  background: var(--bg-card-hover);
+}
+
 /* ---------- Modal ---------- */
 
 .modal-backdrop {

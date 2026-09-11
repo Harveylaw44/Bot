@@ -8,6 +8,8 @@ const KEYS = {
   photos: 'fittrack_photos',
   workoutCompleted: 'fittrack_workout_completed',
   workoutPlan: 'fittrack_workout_plan',
+  meals: 'fittrack_meals',
+  ingredients: 'fittrack_ingredients',
 };
 
 function read(key, fallback) {
@@ -151,6 +153,72 @@ export function setWorkoutCompleted(date, done) {
   return map;
 }
 
+// Meals and ingredients are both just "foods" (name + calories + macros) that
+// the user can edit or delete — the only difference is which list they live
+// in and, by convention, whether they represent a whole plate or a single
+// item. Logged entries always copy the values at log time, so editing or
+// deleting a food later never rewrites history.
+
+function makeFoodStore(key, seedFn) {
+  const getAll = () => {
+    const existing = read(key, null);
+    if (existing) return existing;
+    const seeded = seedFn();
+    write(key, seeded);
+    return seeded;
+  };
+
+  const add = (food) => {
+    const all = getAll();
+    const withId = { ...food, id: crypto.randomUUID() };
+    const next = [...all, withId];
+    write(key, next);
+    return next;
+  };
+
+  const update = (id, food) => {
+    const all = getAll();
+    const next = all.map((f) => (f.id === id ? { ...f, ...food, id } : f));
+    write(key, next);
+    return next;
+  };
+
+  const remove = (id) => {
+    const next = getAll().filter((f) => f.id !== id);
+    write(key, next);
+    return next;
+  };
+
+  return { getAll, add, update, remove };
+}
+
+const mealStore = makeFoodStore(KEYS.meals, () => [
+  { name: 'Chicken & Rice', calories: 620, protein: 52, carbs: 70, fat: 12 },
+  { name: 'Minced Beef Pasta', calories: 710, protein: 45, carbs: 78, fat: 22 },
+  { name: 'Eggs & Bread', calories: 420, protein: 26, carbs: 38, fat: 18 },
+  { name: 'Tuna Pasta', calories: 560, protein: 40, carbs: 65, fat: 10 },
+  { name: 'Oats & Yogurt', calories: 380, protein: 24, carbs: 52, fat: 8 },
+].map((m) => ({ ...m, id: crypto.randomUUID() })));
+
+const ingredientStore = makeFoodStore(KEYS.ingredients, () => [
+  { name: 'Chicken Breast (100g)', calories: 165, protein: 31, carbs: 0, fat: 4 },
+  { name: 'White Rice, cooked (100g)', calories: 130, protein: 2.7, carbs: 28, fat: 0.3 },
+  { name: 'Egg (1 large)', calories: 78, protein: 6, carbs: 0.6, fat: 5 },
+  { name: 'Banana (1 medium)', calories: 105, protein: 1.3, carbs: 27, fat: 0.4 },
+  { name: 'Greek Yogurt (100g)', calories: 97, protein: 9, carbs: 3.6, fat: 5 },
+  { name: 'Almonds (30g)', calories: 174, protein: 6.4, carbs: 6.5, fat: 15 },
+].map((i) => ({ ...i, id: crypto.randomUUID() })));
+
+export const getMeals = mealStore.getAll;
+export const addMeal = mealStore.add;
+export const updateMeal = mealStore.update;
+export const deleteMeal = mealStore.remove;
+
+export const getIngredients = ingredientStore.getAll;
+export const addIngredient = ingredientStore.add;
+export const updateIngredient = ingredientStore.update;
+export const deleteIngredient = ingredientStore.remove;
+
 export function exportAllData() {
   return {
     exportedAt: new Date().toISOString(),
@@ -160,6 +228,8 @@ export function exportAllData() {
     photos: getPhotos(),
     workoutCompleted: getWorkoutCompleted(),
     workoutPlan: getWorkoutPlan(),
+    meals: getMeals(),
+    ingredients: getIngredients(),
   };
 }
 
@@ -171,4 +241,6 @@ export function importAllData(data) {
   if (data.photos) write(KEYS.photos, data.photos);
   if (data.workoutCompleted) write(KEYS.workoutCompleted, data.workoutCompleted);
   if (data.workoutPlan) write(KEYS.workoutPlan, data.workoutPlan);
+  if (data.meals) write(KEYS.meals, data.meals);
+  if (data.ingredients) write(KEYS.ingredients, data.ingredients);
 }
