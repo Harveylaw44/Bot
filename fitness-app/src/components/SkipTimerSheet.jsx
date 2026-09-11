@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getTimerSettings, saveTimerSettings, getWeights, addEntry, todayISO } from '../storage.js';
 import { estimateCaloriesBurned } from '../calorieBurnCalc.js';
-import { beep, beepSequence } from '../beep.js';
+import { beep, beepSequence, unlockAudio } from '../beep.js';
 
 function formatClock(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
@@ -60,7 +60,13 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
         }
         setPhase(result.phase);
         setRound(result.round);
-        beep(result.phase === 'work' ? 880 : 440, 320, 0.65);
+        // Two distinct sounds at every transition: a short blip for the
+        // phase that just ended, then — after a beat — the tone for the
+        // one that's starting (high/energetic for work, lower for rest).
+        beepSequence([
+          { freq: 550, duration: 130, delay: 0, volume: 0.5 },
+          { freq: result.phase === 'work' ? 880 : 440, duration: 320, delay: 170, volume: 0.65 },
+        ]);
         return result.seconds;
       });
     }, 1000);
@@ -85,6 +91,7 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
   }, [status]);
 
   const start = () => {
+    unlockAudio();
     const numeric = {
       workSec: Math.max(1, Number(draft.workSec) || 0),
       restSec: Math.max(0, Number(draft.restSec) || 0),
@@ -107,7 +114,10 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
   };
 
   const pause = () => setStatus('paused');
-  const resume = () => setStatus('running');
+  const resume = () => {
+    unlockAudio(); // in case the OS suspended it while paused/backgrounded
+    setStatus('running');
+  };
   const stopEarly = () => setStatus('done');
 
   const weightKg = getWeights()[0]?.kg ?? 70;
