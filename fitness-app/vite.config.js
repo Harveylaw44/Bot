@@ -13,6 +13,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Registered manually in main.jsx so we can force a reload once a new
+      // service worker takes over — otherwise an already-open iOS home
+      // screen app can keep running old cached code after a "close/reopen"
+      // that only resumes the suspended page instead of a true reload.
+      injectRegister: false,
       includeAssets: ['apple-touch-icon.png', 'favicon-32.png'],
       manifest: {
         name: 'FitTrack',
