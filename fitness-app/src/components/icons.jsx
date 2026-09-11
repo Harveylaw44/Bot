@@ -144,6 +144,30 @@ export function IconEyeOff(props) {
   );
 }
 
+export function IconChevronUp(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M6 15l6-6 6 6" />
+    </svg>
+  );
+}
+
+export function IconChevronDown(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+export function IconX(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
 export function IconPencil(props) {
   return (
     <svg {...common} {...props}>

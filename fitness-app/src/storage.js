@@ -7,7 +7,7 @@ const KEYS = {
   weights: 'fittrack_weights',
   photos: 'fittrack_photos',
   workoutCompleted: 'fittrack_workout_completed',
-  workoutPlan: 'fittrack_workout_plan',
+  workoutCycle: 'fittrack_workout_cycle',
   meals: 'fittrack_meals',
   ingredients: 'fittrack_ingredients',
   supplements: 'fittrack_supplements',
@@ -48,14 +48,12 @@ export const DEFAULT_SETTINGS = {
   goalType: 'maintain',
 };
 
-export const DEFAULT_WORKOUT_PLAN = {
-  0: 'Rest Day', // Sunday
-  1: 'Chest & Biceps',
-  2: 'Back & Triceps',
-  3: 'Legs',
-  4: 'Shoulders & Abs',
-  5: 'Cardio',
-  6: 'Rest Day', // Saturday
+// A repeating N-day rotation, not tied to weekdays (e.g. train 2 days,
+// rest 1, repeat) — anchorDate is the calendar date on which steps[0]
+// falls, so any date's workout is (days since anchor) mod steps.length.
+export const DEFAULT_WORKOUT_CYCLE = {
+  steps: ['Chest & Biceps', 'Back', 'Rest Day', 'Legs', 'Shoulders & Triceps', 'Rest Day'],
+  anchorDate: new Date().toISOString().slice(0, 10),
 };
 
 export function todayISO(offsetDays = 0) {
@@ -72,12 +70,22 @@ export function saveSettings(settings) {
   write(KEYS.settings, settings);
 }
 
-export function getWorkoutPlan() {
-  return { ...DEFAULT_WORKOUT_PLAN, ...read(KEYS.workoutPlan, {}) };
+export function getWorkoutCycle() {
+  return { ...DEFAULT_WORKOUT_CYCLE, ...read(KEYS.workoutCycle, {}) };
 }
 
-export function saveWorkoutPlan(plan) {
-  write(KEYS.workoutPlan, plan);
+export function saveWorkoutCycle(cycle) {
+  write(KEYS.workoutCycle, cycle);
+}
+
+export function getWorkoutForDate(dateISO) {
+  const { steps, anchorDate } = getWorkoutCycle();
+  if (!steps || steps.length === 0) return 'Rest Day';
+  const anchor = new Date(anchorDate + 'T00:00:00');
+  const d = new Date(dateISO + 'T00:00:00');
+  const diffDays = Math.round((d - anchor) / 86400000);
+  const idx = ((diffDays % steps.length) + steps.length) % steps.length;
+  return steps[idx];
 }
 
 export function getLog() {
@@ -325,13 +333,11 @@ export function getLoggingStreak() {
 // rest days are skipped over rather than breaking or extending it. Same
 // "today isn't over yet" carve-out as the logging streak.
 export function getGymStreak() {
-  const plan = getWorkoutPlan();
   const completed = getWorkoutCompleted();
   let streak = 0;
   for (let i = 0; i < MAX_STREAK_LOOKBACK; i++) {
     const date = todayISO(-i);
-    const dow = new Date(date + 'T00:00:00').getDay();
-    if (plan[dow] === 'Rest Day') continue;
+    if (getWorkoutForDate(date) === 'Rest Day') continue;
     if (completed[date]) streak++;
     else if (i === 0) continue;
     else break;
@@ -347,7 +353,7 @@ export function exportAllData() {
     weights: getWeights(),
     photos: getPhotos(),
     workoutCompleted: getWorkoutCompleted(),
-    workoutPlan: getWorkoutPlan(),
+    workoutCycle: getWorkoutCycle(),
     meals: getMeals(),
     ingredients: getIngredients(),
     supplements: getSupplements(),
@@ -364,7 +370,7 @@ export function importAllData(data) {
   if (data.weights) write(KEYS.weights, data.weights);
   if (data.photos) write(KEYS.photos, data.photos);
   if (data.workoutCompleted) write(KEYS.workoutCompleted, data.workoutCompleted);
-  if (data.workoutPlan) write(KEYS.workoutPlan, data.workoutPlan);
+  if (data.workoutCycle) write(KEYS.workoutCycle, data.workoutCycle);
   if (data.meals) write(KEYS.meals, data.meals);
   if (data.ingredients) write(KEYS.ingredients, data.ingredients);
   if (data.supplements) write(KEYS.supplements, data.supplements);

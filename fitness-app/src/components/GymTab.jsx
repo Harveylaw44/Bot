@@ -1,28 +1,34 @@
 import { useEffect, useState } from 'react';
-import { getWorkoutPlan, saveWorkoutPlan, getWorkoutCompleted, setWorkoutCompleted, todayISO } from '../storage.js';
+import {
+  getWorkoutCycle,
+  saveWorkoutCycle,
+  getWorkoutForDate,
+  getWorkoutCompleted,
+  setWorkoutCompleted,
+  todayISO,
+} from '../storage.js';
 import { formatDateLabel } from '../utils.js';
 import { IconCheck, IconPencil } from './icons.jsx';
-import WorkoutPlanSheet from './WorkoutPlanSheet.jsx';
+import WorkoutCycleSheet from './WorkoutCycleSheet.jsx';
 
 export default function GymTab({ refreshTick, onDataChange }) {
-  const [plan, setPlan] = useState({});
+  const [cycle, setCycle] = useState({ steps: [], anchorDate: todayISO() });
   const [completed, setCompleted] = useState({});
   const [editingPlan, setEditingPlan] = useState(false);
 
   useEffect(() => {
-    setPlan(getWorkoutPlan());
+    setCycle(getWorkoutCycle());
     setCompleted(getWorkoutCompleted());
   }, [refreshTick]);
 
-  const handleSavePlan = (nextPlan) => {
-    saveWorkoutPlan(nextPlan);
+  const handleSavePlan = (nextCycle) => {
+    saveWorkoutCycle(nextCycle);
     setEditingPlan(false);
     onDataChange();
   };
 
   const date = todayISO();
-  const dow = new Date().getDay();
-  const todayWorkout = plan[dow];
+  const todayWorkout = getWorkoutForDate(date);
   const isRestDay = todayWorkout === 'Rest Day';
   const todayDone = !!completed[date];
 
@@ -33,8 +39,7 @@ export default function GymTab({ refreshTick, onDataChange }) {
 
   const next7 = Array.from({ length: 7 }, (_, i) => {
     const d = todayISO(i);
-    const dayOfWeek = new Date(d + 'T00:00:00').getDay();
-    return { date: d, workout: plan[dayOfWeek], done: !!completed[d] };
+    return { date: d, workout: getWorkoutForDate(d), done: !!completed[d] };
   });
 
   const toggleDay = (d, done) => {
@@ -115,7 +120,7 @@ export default function GymTab({ refreshTick, onDataChange }) {
       ))}
 
       {editingPlan && (
-        <WorkoutPlanSheet initial={plan} onClose={() => setEditingPlan(false)} onSave={handleSavePlan} />
+        <WorkoutCycleSheet initial={cycle} onClose={() => setEditingPlan(false)} onSave={handleSavePlan} />
       )}
     </>
   );
