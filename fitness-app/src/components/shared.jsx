@@ -92,37 +92,60 @@ export function CalorieBarChart({ days, goal }) {
   );
 }
 
-// Simple weight trend line chart, no charting library.
-export function WeightLineChart({ points }) {
+// Generic trend line chart, no charting library. `points` and the optional
+// `average` overlay are both [{date, value}], index-aligned to the same
+// dates. When `average` is given, the raw points fade into a thin dotted
+// line and the average becomes the bold one — otherwise the raw line is
+// bold on its own (e.g. for measurements, which don't have an average).
+export function TrendLineChart({ points, average, emptyLabel = 'Log at least 2 entries to see your trend' }) {
   const width = 320;
   const height = 140;
   const padding = 14;
 
   if (points.length < 2) {
-    return (
-      <EmptyState>Log at least 2 weigh-ins to see your trend</EmptyState>
-    );
+    return <EmptyState>{emptyLabel}</EmptyState>;
   }
 
-  const values = points.map((p) => p.kg);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const allValues = [...points.map((p) => p.value), ...(average || []).map((p) => p.value)];
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
   const range = max - min || 1;
 
-  const coords = points.map((p, i) => {
-    const x = padding + (i / (points.length - 1)) * (width - padding * 2);
-    const y = padding + (1 - (p.kg - min) / range) * (height - padding * 2);
-    return [x, y];
-  });
+  const toCoords = (arr) =>
+    arr.map((p, i) => {
+      const x = padding + (i / (points.length - 1)) * (width - padding * 2);
+      const y = padding + (1 - (p.value - min) / range) * (height - padding * 2);
+      return [x, y];
+    });
 
-  const path = coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ');
+  const rawCoords = toCoords(points);
+  const avgCoords = average ? toCoords(average) : null;
+  const toPath = (coords) => coords.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`).join(' ');
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ display: 'block' }}>
-      <path d={path} fill="none" stroke="var(--green)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {coords.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="3" fill="var(--green)" />
+      <path
+        d={toPath(rawCoords)}
+        fill="none"
+        stroke={avgCoords ? 'var(--text-faint)' : 'var(--green)'}
+        strokeWidth={avgCoords ? 1.5 : 2.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        opacity={avgCoords ? 0.6 : 1}
+      />
+      {rawCoords.map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={avgCoords ? 2 : 3} fill={avgCoords ? 'var(--text-faint)' : 'var(--green)'} />
       ))}
+      {avgCoords && (
+        <path
+          d={toPath(avgCoords)}
+          fill="none"
+          stroke="var(--green)"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      )}
     </svg>
   );
 }

@@ -21,6 +21,7 @@ import { formatTime } from '../utils.js';
 
 export default function MealsTab({ refreshTick, onDataChange }) {
   const [tab, setTab] = useState('meals'); // 'meals' | 'ingredients'
+  const [query, setQuery] = useState('');
   const [settings, setSettings] = useState(getSettings());
   const [entries, setEntries] = useState([]);
   const [meals, setMeals] = useState([]);
@@ -36,7 +37,10 @@ export default function MealsTab({ refreshTick, onDataChange }) {
     setIngredients(getIngredients());
   }, [refreshTick]);
 
-  const foods = tab === 'meals' ? meals : ingredients;
+  const allFoods = tab === 'meals' ? meals : ingredients;
+  const foods = query.trim()
+    ? allFoods.filter((f) => f.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : allFoods;
   const loggedFoods = entries.filter((e) => e.type === 'meal');
   const totals = loggedFoods.reduce(
     (acc, m) => ({
@@ -93,17 +97,38 @@ export default function MealsTab({ refreshTick, onDataChange }) {
       <div className="page-title">Meals</div>
 
       <div className="segmented">
-        <button className={tab === 'meals' ? 'active' : ''} onClick={() => setTab('meals')}>
+        <button className={tab === 'meals' ? 'active' : ''} onClick={() => { setTab('meals'); setQuery(''); }}>
           Meals
         </button>
-        <button className={tab === 'ingredients' ? 'active' : ''} onClick={() => setTab('ingredients')}>
+        <button className={tab === 'ingredients' ? 'active' : ''} onClick={() => { setTab('ingredients'); setQuery(''); }}>
           Ingredients
         </button>
       </div>
 
+      {allFoods.length > 5 && (
+        <input
+          type="text"
+          placeholder={`Search ${tab}...`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{
+            width: '100%',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '12px 14px',
+            color: 'var(--text)',
+            fontSize: 14.5,
+            marginBottom: 14,
+          }}
+        />
+      )}
+
       <div className="section-label">Tap to Log</div>
       {foods.length === 0 ? (
-        <EmptyState>Nothing here yet — add your first one below</EmptyState>
+        <EmptyState>
+          {query.trim() ? `No matches for "${query.trim()}"` : 'Nothing here yet — add your first one below'}
+        </EmptyState>
       ) : (
         foods.map((food) => (
           <div

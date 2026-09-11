@@ -1,9 +1,55 @@
-import { useRef, useState } from 'react';
-import { exportAllData, importAllData } from '../storage.js';
+import { useEffect, useRef, useState } from 'react';
+import { exportAllData, importAllData, getSettings, saveSettings, getWeights } from '../storage.js';
+import GoalsCalculatorSheet from './GoalsCalculatorSheet.jsx';
 
-export default function SettingsTab({ onDataChange }) {
+export default function SettingsTab({ refreshTick, onDataChange }) {
   const fileInputRef = useRef(null);
   const [status, setStatus] = useState(null);
+  const [settings, setSettings] = useState(getSettings());
+  const [calorieGoal, setCalorieGoal] = useState(settings.calorieGoal);
+  const [proteinGoal, setProteinGoal] = useState(settings.proteinGoal);
+  const [carbGoal, setCarbGoal] = useState(settings.carbGoal);
+  const [fatGoal, setFatGoal] = useState(settings.fatGoal);
+  const [goalsStatus, setGoalsStatus] = useState(null);
+  const [showCalc, setShowCalc] = useState(false);
+
+  useEffect(() => {
+    const s = getSettings();
+    setSettings(s);
+    setCalorieGoal(s.calorieGoal);
+    setProteinGoal(s.proteinGoal);
+    setCarbGoal(s.carbGoal);
+    setFatGoal(s.fatGoal);
+  }, [refreshTick]);
+
+  const handleSaveGoals = () => {
+    const next = {
+      ...settings,
+      calorieGoal: Number(calorieGoal) || 0,
+      proteinGoal: Number(proteinGoal) || 0,
+      carbGoal: Number(carbGoal) || 0,
+      fatGoal: Number(fatGoal) || 0,
+    };
+    saveSettings(next);
+    setSettings(next);
+    onDataChange();
+    setGoalsStatus('Goals saved.');
+    setTimeout(() => setGoalsStatus(null), 2000);
+  };
+
+  const handleApplyCalculated = ({ profile, goals }) => {
+    const next = { ...settings, ...profile, ...goals };
+    saveSettings(next);
+    setSettings(next);
+    setCalorieGoal(goals.calorieGoal);
+    setProteinGoal(goals.proteinGoal);
+    setCarbGoal(goals.carbGoal);
+    setFatGoal(goals.fatGoal);
+    setShowCalc(false);
+    onDataChange();
+    setGoalsStatus('Goals calculated and saved.');
+    setTimeout(() => setGoalsStatus(null), 2500);
+  };
 
   const handleBackup = async () => {
     const data = exportAllData();
@@ -57,6 +103,55 @@ export default function SettingsTab({ onDataChange }) {
     <>
       <div className="page-title">Settings</div>
 
+      <div className="section-label">Goals</div>
+      <div className="card" style={{ marginBottom: 18 }}>
+        <input
+          type="number"
+          inputMode="numeric"
+          placeholder="Calorie goal"
+          value={calorieGoal}
+          onChange={(e) => setCalorieGoal(e.target.value)}
+          style={fieldStyle}
+        />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Protein (g)"
+            value={proteinGoal}
+            onChange={(e) => setProteinGoal(e.target.value)}
+            style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
+          />
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Carbs (g)"
+            value={carbGoal}
+            onChange={(e) => setCarbGoal(e.target.value)}
+            style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
+          />
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="Fat (g)"
+            value={fatGoal}
+            onChange={(e) => setFatGoal(e.target.value)}
+            style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
+          />
+        </div>
+
+        <button className="btn btn-primary btn-block" onClick={handleSaveGoals} style={{ marginBottom: 10 }}>
+          Save Goals
+        </button>
+        <button className="btn btn-secondary btn-block" onClick={() => setShowCalc(true)}>
+          Calculate My Goals
+        </button>
+
+        {goalsStatus && (
+          <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: 'var(--green)' }}>{goalsStatus}</div>
+        )}
+      </div>
+
       <div className="section-label">Data Backup</div>
       <div className="card" style={{ marginBottom: 18 }}>
         <button className="btn btn-primary btn-block" onClick={handleBackup} style={{ marginBottom: 10 }}>
@@ -103,6 +198,15 @@ export default function SettingsTab({ onDataChange }) {
           app — useful after clearing your browser, reinstalling, or switching devices.
         </p>
       </div>
+
+      {showCalc && (
+        <GoalsCalculatorSheet
+          initial={settings}
+          latestWeightKg={getWeights()[0]?.kg}
+          onClose={() => setShowCalc(false)}
+          onApply={handleApplyCalculated}
+        />
+      )}
     </>
   );
 }
@@ -112,4 +216,15 @@ const instructionStyle = {
   lineHeight: 1.5,
   color: 'var(--text-dim)',
   margin: '0 0 12px',
+};
+
+const fieldStyle = {
+  width: '100%',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  borderRadius: 10,
+  padding: '14px',
+  color: 'var(--text)',
+  fontSize: 16,
+  marginBottom: 10,
 };

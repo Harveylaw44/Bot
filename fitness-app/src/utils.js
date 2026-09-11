@@ -37,3 +37,18 @@ export function formatDateLabel(dateStr) {
 export function formatTime(ms) {
   return new Date(ms).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
+
+// Trailing N-calendar-day average, computed per point from however many
+// entries actually fall in that window — not a fixed entry count, since
+// weigh-ins aren't always daily. points: [{date, value}], chronological.
+export function movingAverage(points, windowDays = 7) {
+  return points.map((point, i) => {
+    const cutoff = new Date(point.date + 'T00:00:00');
+    cutoff.setDate(cutoff.getDate() - (windowDays - 1));
+    const window = points
+      .slice(0, i + 1)
+      .filter((p) => new Date(p.date + 'T00:00:00') >= cutoff);
+    const avg = window.reduce((sum, p) => sum + p.value, 0) / window.length;
+    return { date: point.date, value: avg };
+  });
+}

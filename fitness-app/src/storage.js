@@ -12,6 +12,8 @@ const KEYS = {
   ingredients: 'fittrack_ingredients',
   supplements: 'fittrack_supplements',
   supplementLog: 'fittrack_supplement_log',
+  measurementTypes: 'fittrack_measurement_types',
+  measurements: 'fittrack_measurements',
 };
 
 function read(key, fallback) {
@@ -37,6 +39,12 @@ export const DEFAULT_SETTINGS = {
   proteinGoal: 150,
   carbGoal: 250,
   fatGoal: 80,
+  // Profile fields, only used to prefill the goals calculator next time.
+  sex: 'male',
+  age: '',
+  heightCm: '',
+  activityLevel: 'moderate',
+  goalType: 'maintain',
 };
 
 export const DEFAULT_WORKOUT_PLAN = {
@@ -264,6 +272,68 @@ export function getSupplementLastNDays(n) {
   return days;
 }
 
+const measurementTypeStore = makeStore(KEYS.measurementTypes, () =>
+  ['Waist', 'Chest', 'Arms', 'Thighs', 'Hips'].map((name) => ({ name, id: crypto.randomUUID() }))
+);
+
+export const getMeasurementTypes = measurementTypeStore.getAll;
+export const addMeasurementType = measurementTypeStore.add;
+export const updateMeasurementType = measurementTypeStore.update;
+export const deleteMeasurementType = measurementTypeStore.remove;
+
+export function getMeasurements() {
+  return read(KEYS.measurements, []);
+}
+
+export function addMeasurement(typeId, value) {
+  const all = getMeasurements();
+  const entry = { id: crypto.randomUUID(), typeId, date: todayISO(), value, time: Date.now() };
+  const next = [entry, ...all];
+  write(KEYS.measurements, next);
+  return next;
+}
+
+export function deleteMeasurement(id) {
+  const next = getMeasurements().filter((m) => m.id !== id);
+  write(KEYS.measurements, next);
+  return next;
+}
+
+const MAX_STREAK_LOOKBACK = 3650; // 10 years — a safety cap, not a real limit
+
+// A day counts toward the logging streak if any food (meal or ingredient)
+// was logged on it. Today not having anything logged yet doesn't break a
+// streak built on previous days — the day isn't over.
+export function getLoggingStreak() {
+  const log = getLog();
+  const hasFood = (date) => (log[date] || []).some((e) => e.type === 'meal');
+  const startOffset = hasFood(todayISO()) ? 0 : 1;
+  let streak = 0;
+  for (let i = startOffset; i < MAX_STREAK_LOOKBACK; i++) {
+    if (hasFood(todayISO(-i))) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// Only days with a scheduled (non-rest) workout count toward the gym streak;
+// rest days are skipped over rather than breaking or extending it. Same
+// "today isn't over yet" carve-out as the logging streak.
+export function getGymStreak() {
+  const plan = getWorkoutPlan();
+  const completed = getWorkoutCompleted();
+  let streak = 0;
+  for (let i = 0; i < MAX_STREAK_LOOKBACK; i++) {
+    const date = todayISO(-i);
+    const dow = new Date(date + 'T00:00:00').getDay();
+    if (plan[dow] === 'Rest Day') continue;
+    if (completed[date]) streak++;
+    else if (i === 0) continue;
+    else break;
+  }
+  return streak;
+}
+
 export function exportAllData() {
   return {
     exportedAt: new Date().toISOString(),
@@ -277,6 +347,8 @@ export function exportAllData() {
     ingredients: getIngredients(),
     supplements: getSupplements(),
     supplementLog: getSupplementLog(),
+    measurementTypes: getMeasurementTypes(),
+    measurements: getMeasurements(),
   };
 }
 
@@ -292,4 +364,6 @@ export function importAllData(data) {
   if (data.ingredients) write(KEYS.ingredients, data.ingredients);
   if (data.supplements) write(KEYS.supplements, data.supplements);
   if (data.supplementLog) write(KEYS.supplementLog, data.supplementLog);
+  if (data.measurementTypes) write(KEYS.measurementTypes, data.measurementTypes);
+  if (data.measurements) write(KEYS.measurements, data.measurements);
 }

@@ -342,6 +342,34 @@ input {
   color: var(--red);
 }
 
+/* ---------- Chip row (horizontally scrollable selector) ---------- */
+
+.chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  margin-bottom: 14px;
+}
+
+.chip {
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.chip.active {
+  background: var(--green-dim);
+  color: var(--green);
+  border-color: var(--green);
+}
+
 /* ---------- Segmented control ---------- */
 
 .segmented {

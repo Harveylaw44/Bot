@@ -7,11 +7,13 @@ import {
   addWeight,
   addPhoto,
   getLastNDaysTotals,
+  getLoggingStreak,
+  getGymStreak,
   todayISO,
 } from '../storage.js';
 import { ProgressBar, DeleteButton, EmptyState, CalorieBarChart } from './shared.jsx';
 import QuickAddSheet from './QuickAddSheet.jsx';
-import { IconMeals, IconCardio, IconScale, IconCamera } from './icons.jsx';
+import { IconMeals, IconCardio, IconScale, IconCamera, IconFire, IconGym } from './icons.jsx';
 import { calorieStatus, macroStatus, formatTime } from '../utils.js';
 import { downscaleImage } from '../imageUtils.js';
 
@@ -19,6 +21,8 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
   const [settings, setSettings] = useState(getSettings());
   const [entries, setEntries] = useState([]);
   const [last7, setLast7] = useState([]);
+  const [loggingStreak, setLoggingStreak] = useState(0);
+  const [gymStreak, setGymStreak] = useState(0);
   const [sheet, setSheet] = useState(null); // 'cardio' | 'weight' | null
   const date = todayISO();
 
@@ -26,6 +30,8 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
     setSettings(getSettings());
     setEntries(getDayEntries(date));
     setLast7(getLastNDaysTotals(7));
+    setLoggingStreak(getLoggingStreak());
+    setGymStreak(getGymStreak());
   }, [refreshTick]);
 
   const eaten = entries
@@ -102,6 +108,23 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
           goal={settings.fatGoal}
           status={macroStatus(fat, settings.fatGoal)}
         />
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+        <div className="card" style={{ flex: 1, textAlign: 'center' }}>
+          <IconFire style={{ width: 20, height: 20, color: 'var(--yellow)' }} />
+          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{loggingStreak}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--text-dim)', fontWeight: 600 }}>
+            day logging streak
+          </div>
+        </div>
+        <div className="card" style={{ flex: 1, textAlign: 'center' }}>
+          <IconGym style={{ width: 20, height: 20, color: 'var(--green)' }} />
+          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>{gymStreak}</div>
+          <div style={{ fontSize: 11.5, color: 'var(--text-dim)', fontWeight: 600 }}>
+            day gym streak
+          </div>
+        </div>
       </div>
 
       <div className="section-label">Quick Add</div>
