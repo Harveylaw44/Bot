@@ -1,16 +1,24 @@
 import { useEffect, useState } from 'react';
-import { getWorkoutPlan, getWorkoutCompleted, setWorkoutCompleted, todayISO } from '../storage.js';
+import { getWorkoutPlan, saveWorkoutPlan, getWorkoutCompleted, setWorkoutCompleted, todayISO } from '../storage.js';
 import { formatDateLabel } from '../utils.js';
-import { IconCheck } from './icons.jsx';
+import { IconCheck, IconPencil } from './icons.jsx';
+import WorkoutPlanSheet from './WorkoutPlanSheet.jsx';
 
 export default function GymTab({ refreshTick, onDataChange }) {
   const [plan, setPlan] = useState({});
   const [completed, setCompleted] = useState({});
+  const [editingPlan, setEditingPlan] = useState(false);
 
   useEffect(() => {
     setPlan(getWorkoutPlan());
     setCompleted(getWorkoutCompleted());
   }, [refreshTick]);
+
+  const handleSavePlan = (nextPlan) => {
+    saveWorkoutPlan(nextPlan);
+    setEditingPlan(false);
+    onDataChange();
+  };
 
   const date = todayISO();
   const dow = new Date().getDay();
@@ -46,8 +54,18 @@ export default function GymTab({ refreshTick, onDataChange }) {
           border: todayDone ? '1px solid var(--green)' : '1px solid var(--border)',
         }}
       >
-        <div style={{ fontSize: 13, color: 'var(--text-dim)', fontWeight: 600, marginBottom: 6 }}>
-          TODAY'S WORKOUT
+        <div style={{ position: 'relative' }}>
+          <button
+            className="icon-btn"
+            onClick={() => setEditingPlan(true)}
+            aria-label="Edit split"
+            style={{ position: 'absolute', top: 0, right: 0 }}
+          >
+            <IconPencil />
+          </button>
+          <div style={{ fontSize: 13, color: 'var(--text-dim)', fontWeight: 600, marginBottom: 6 }}>
+            TODAY'S WORKOUT
+          </div>
         </div>
         <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 16 }}>{todayWorkout}</div>
         <button
@@ -95,6 +113,10 @@ export default function GymTab({ refreshTick, onDataChange }) {
           </div>
         </div>
       ))}
+
+      {editingPlan && (
+        <WorkoutPlanSheet initial={plan} onClose={() => setEditingPlan(false)} onSave={handleSavePlan} />
+      )}
     </>
   );
 }

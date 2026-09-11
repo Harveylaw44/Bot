@@ -76,6 +76,10 @@ export function getWorkoutPlan() {
   return { ...DEFAULT_WORKOUT_PLAN, ...read(KEYS.workoutPlan, {}) };
 }
 
+export function saveWorkoutPlan(plan) {
+  write(KEYS.workoutPlan, plan);
+}
+
 export function getLog() {
   return read(KEYS.log, {});
 }
