@@ -35,22 +35,22 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
       setPhaseSecondsLeft((secs) => {
         const next = secs - 1;
         if (next > 0) {
-          if (next <= 3) beep(600, 80, 0.12);
+          if (next <= 3) beep(700, 120, 0.4);
           return next;
         }
         const result = computeNext(phase, round, config.rounds, config.workSec, config.restSec);
         if (result.phase === 'done') {
           setStatus('done');
           beepSequence([
-            { freq: 660, duration: 150, delay: 0 },
-            { freq: 880, duration: 150, delay: 180 },
-            { freq: 1100, duration: 300, delay: 180 },
+            { freq: 660, duration: 220, delay: 0, volume: 0.6 },
+            { freq: 880, duration: 220, delay: 250, volume: 0.65 },
+            { freq: 1100, duration: 450, delay: 250, volume: 0.7 },
           ]);
           return 0;
         }
         setPhase(result.phase);
         setRound(result.round);
-        beep(result.phase === 'work' ? 880 : 440, 220, 0.22);
+        beep(result.phase === 'work' ? 880 : 440, 320, 0.65);
         return result.seconds;
       });
     }, 1000);
@@ -82,7 +82,7 @@ export default function SkipTimerSheet({ onClose, onDataChange }) {
     setElapsedSec(0);
     setLogged(false);
     setStatus('running');
-    beep(880, 220, 0.22);
+    beep(880, 320, 0.65);
   };
 
   const pause = () => setStatus('paused');
