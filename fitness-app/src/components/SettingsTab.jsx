@@ -22,6 +22,13 @@ export default function SettingsTab({ refreshTick, onDataChange }) {
     setFatGoal(s.fatGoal);
   }, [refreshTick]);
 
+  const handleUnitsChange = (units) => {
+    const next = { ...settings, units };
+    saveSettings(next);
+    setSettings(next);
+    onDataChange();
+  };
+
   const handleSaveGoals = () => {
     const next = {
       ...settings,
@@ -102,6 +109,18 @@ export default function SettingsTab({ refreshTick, onDataChange }) {
   return (
     <>
       <div className="page-title">Settings</div>
+
+      <div className="section-label">Units</div>
+      <div className="card" style={{ marginBottom: 18, padding: 6 }}>
+        <div className="segmented" style={{ margin: 0 }}>
+          <button className={settings.units !== 'imperial' ? 'active' : ''} onClick={() => handleUnitsChange('metric')}>
+            Metric (kg / cm)
+          </button>
+          <button className={settings.units === 'imperial' ? 'active' : ''} onClick={() => handleUnitsChange('imperial')}>
+            Imperial (lbs / ft-in)
+          </button>
+        </div>
+      </div>
 
       <div className="section-label">Goals</div>
       <div className="card" style={{ marginBottom: 18 }}>

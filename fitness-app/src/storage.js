@@ -39,6 +39,7 @@ export const DEFAULT_SETTINGS = {
   proteinGoal: 150,
   carbGoal: 250,
   fatGoal: 80,
+  units: 'metric', // 'metric' (kg/cm) | 'imperial' (lbs/ft-in)
   // Profile fields, only used to prefill the goals calculator next time.
   sex: 'male',
   age: '',

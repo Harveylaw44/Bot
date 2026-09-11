@@ -7,11 +7,12 @@ import {
   getMeasurements,
   addMeasurement,
   deleteMeasurement,
+  getSettings,
 } from '../storage.js';
 import { DeleteButton, EmptyState, TrendLineChart } from './shared.jsx';
 import MeasurementTypeSheet from './MeasurementTypeSheet.jsx';
 import { IconPencil, IconPlus } from './icons.jsx';
-import { formatDateLabel } from '../utils.js';
+import { formatDateLabel, cmToIn, inToCm, round1 } from '../utils.js';
 
 export default function MeasurementsSection({ refreshTick, onDataChange }) {
   const [types, setTypes] = useState([]);
@@ -19,13 +20,18 @@ export default function MeasurementsSection({ refreshTick, onDataChange }) {
   const [measurements, setMeasurements] = useState([]);
   const [value, setValue] = useState('');
   const [sheet, setSheet] = useState(null); // 'add' | { item }
+  const [units, setUnits] = useState(getSettings().units);
 
   useEffect(() => {
     const t = getMeasurementTypes();
     setTypes(t);
     setSelectedId((prev) => prev && t.some((x) => x.id === prev) ? prev : t[0]?.id ?? null);
     setMeasurements(getMeasurements());
+    setUnits(getSettings().units);
   }, [refreshTick]);
+
+  const isImperial = units === 'imperial';
+  const unitLabel = isImperial ? 'in' : 'cm';
 
   const selectedType = types.find((t) => t.id === selectedId);
   const entriesForType = measurements.filter((m) => m.typeId === selectedId);
@@ -36,9 +42,10 @@ export default function MeasurementsSection({ refreshTick, onDataChange }) {
     .map((m) => ({ date: m.date, value: m.value }));
 
   const handleLog = () => {
-    const val = parseFloat(value);
-    if (!val || val <= 0 || !selectedId) return;
-    addMeasurement(selectedId, val);
+    const entered = parseFloat(value);
+    if (!entered || entered <= 0 || !selectedId) return;
+    const cm = isImperial ? round1(inToCm(entered)) : entered;
+    addMeasurement(selectedId, cm);
     setValue('');
     onDataChange();
   };
@@ -88,7 +95,9 @@ export default function MeasurementsSection({ refreshTick, onDataChange }) {
         <>
           <div className="card" style={{ marginBottom: 18 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontWeight: 700, fontSize: 15 }}>{selectedType.name} (cm)</span>
+              <span style={{ fontWeight: 700, fontSize: 15 }}>
+                {selectedType.name} ({unitLabel})
+              </span>
               <button className="icon-btn" onClick={() => setSheet({ item: selectedType })} aria-label="Edit">
                 <IconPencil />
               </button>
@@ -96,7 +105,7 @@ export default function MeasurementsSection({ refreshTick, onDataChange }) {
             <input
               type="number"
               inputMode="decimal"
-              placeholder={`Enter ${selectedType.name.toLowerCase()} (cm)`}
+              placeholder={`Enter ${selectedType.name.toLowerCase()} (${unitLabel})`}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleLog()}
@@ -130,7 +139,9 @@ export default function MeasurementsSection({ refreshTick, onDataChange }) {
             last10.map((m) => (
               <div className="list-row" key={m.id} onClick={() => handleDeleteEntry(m.id)}>
                 <div className="main">
-                  <div className="title">{m.value} cm</div>
+                  <div className="title">
+                    {isImperial ? round1(cmToIn(m.value)) : m.value} {unitLabel}
+                  </div>
                   <div className="sub">{formatDateLabel(m.date)}</div>
                 </div>
                 <div className="right">

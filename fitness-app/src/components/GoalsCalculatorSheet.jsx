@@ -1,23 +1,34 @@
 import { useState } from 'react';
 import { ACTIVITY_LEVELS, GOAL_TYPES, calculateGoals } from '../calorieCalc.js';
+import { kgToLbs, lbsToKg, cmToFtIn, ftInToCm } from '../utils.js';
 
 export default function GoalsCalculatorSheet({ initial, latestWeightKg, onClose, onApply }) {
+  const isImperial = initial.units === 'imperial';
+  const initialFtIn = initial.heightCm ? cmToFtIn(initial.heightCm) : { ft: '', inch: '' };
+
   const [sex, setSex] = useState(initial.sex || 'male');
   const [age, setAge] = useState(initial.age || '');
-  const [heightCm, setHeightCm] = useState(initial.heightCm || '');
-  const [weightKg, setWeightKg] = useState(latestWeightKg ?? '');
+  const [heightCmInput, setHeightCmInput] = useState(initial.heightCm || '');
+  const [heightFt, setHeightFt] = useState(initialFtIn.ft || '');
+  const [heightIn, setHeightIn] = useState(initialFtIn.inch || '');
+  const [weightInput, setWeightInput] = useState(
+    latestWeightKg != null ? (isImperial ? Math.round(kgToLbs(latestWeightKg)) : latestWeightKg) : ''
+  );
   const [activityLevel, setActivityLevel] = useState(initial.activityLevel || 'moderate');
   const [goalType, setGoalType] = useState(initial.goalType || 'maintain');
 
-  const valid = Number(age) > 0 && Number(heightCm) > 0 && Number(weightKg) > 0;
+  const heightCm = isImperial ? ftInToCm(heightFt, heightIn) : Number(heightCmInput);
+  const weightKg = isImperial ? lbsToKg(Number(weightInput) || 0) : Number(weightInput) || 0;
+
+  const valid = Number(age) > 0 && heightCm > 0 && weightKg > 0;
   const result = valid
-    ? calculateGoals({ sex, age: Number(age), heightCm: Number(heightCm), weightKg: Number(weightKg), activityLevel, goalType })
+    ? calculateGoals({ sex, age: Number(age), heightCm, weightKg, activityLevel, goalType })
     : null;
 
   const apply = () => {
     if (!result) return;
     onApply({
-      profile: { sex, age: Number(age), heightCm: Number(heightCm), activityLevel, goalType },
+      profile: { sex, age: Number(age), heightCm: Math.round(heightCm), activityLevel, goalType },
       goals: {
         calorieGoal: result.calorieGoal,
         proteinGoal: result.proteinGoal,
@@ -53,20 +64,43 @@ export default function GoalsCalculatorSheet({ initial, latestWeightKg, onClose,
             onChange={(e) => setAge(e.target.value)}
             style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
           />
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="Height (cm)"
-            value={heightCm}
-            onChange={(e) => setHeightCm(e.target.value)}
-            style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
-          />
+
+          {isImperial ? (
+            <>
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="Height (ft)"
+                value={heightFt}
+                onChange={(e) => setHeightFt(e.target.value)}
+                style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
+              />
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="(in)"
+                value={heightIn}
+                onChange={(e) => setHeightIn(e.target.value)}
+                style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
+              />
+            </>
+          ) : (
+            <input
+              type="number"
+              inputMode="numeric"
+              placeholder="Height (cm)"
+              value={heightCmInput}
+              onChange={(e) => setHeightCmInput(e.target.value)}
+              style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
+            />
+          )}
+
           <input
             type="number"
             inputMode="decimal"
-            placeholder="Weight (kg)"
-            value={weightKg}
-            onChange={(e) => setWeightKg(e.target.value)}
+            placeholder={isImperial ? 'Weight (lbs)' : 'Weight (kg)'}
+            value={weightInput}
+            onChange={(e) => setWeightInput(e.target.value)}
             style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
           />
         </div>

@@ -1,21 +1,27 @@
 import { useEffect, useState } from 'react';
-import { getWeights, addWeight, deleteWeight } from '../storage.js';
+import { getWeights, addWeight, deleteWeight, getSettings } from '../storage.js';
 import { DeleteButton, EmptyState, TrendLineChart } from './shared.jsx';
 import MeasurementsSection from './MeasurementsSection.jsx';
-import { formatDateLabel, movingAverage } from '../utils.js';
+import { formatDateLabel, movingAverage, kgToLbs, lbsToKg, round1 } from '../utils.js';
 
 export default function WeightTab({ refreshTick, onDataChange }) {
   const [tab, setTab] = useState('weight'); // 'weight' | 'measurements'
   const [weights, setWeights] = useState([]);
   const [value, setValue] = useState('');
+  const [units, setUnits] = useState(getSettings().units);
 
   useEffect(() => {
     setWeights(getWeights());
+    setUnits(getSettings().units);
   }, [refreshTick]);
 
+  const isImperial = units === 'imperial';
+  const unitLabel = isImperial ? 'lbs' : 'kg';
+
   const handleLog = () => {
-    const kg = parseFloat(value);
-    if (!kg || kg <= 0) return;
+    const entered = parseFloat(value);
+    if (!entered || entered <= 0) return;
+    const kg = isImperial ? round1(lbsToKg(entered)) : entered;
     addWeight(kg);
     setValue('');
     onDataChange();
@@ -54,7 +60,7 @@ export default function WeightTab({ refreshTick, onDataChange }) {
             <input
               type="number"
               inputMode="decimal"
-              placeholder="Enter weight (kg)"
+              placeholder={`Enter weight (${unitLabel})`}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleLog()}
@@ -98,7 +104,9 @@ export default function WeightTab({ refreshTick, onDataChange }) {
             last10.map((w) => (
               <div className="list-row" key={w.id} onClick={() => handleDelete(w.id)}>
                 <div className="main">
-                  <div className="title">{w.kg} kg</div>
+                  <div className="title">
+                    {isImperial ? round1(kgToLbs(w.kg)) : w.kg} {unitLabel}
+                  </div>
                   <div className="sub">{formatDateLabel(w.date)}</div>
                 </div>
                 <div className="right">

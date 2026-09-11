@@ -38,6 +38,41 @@ export function formatTime(ms) {
   return new Date(ms).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
+// Unit conversion. Storage always stays canonical (kg, cm) regardless of
+// display preference — only these boundary functions ever convert, so
+// switching units back and forth never touches saved data.
+const KG_PER_LB = 0.45359237;
+const CM_PER_IN = 2.54;
+
+export function kgToLbs(kg) {
+  return kg / KG_PER_LB;
+}
+
+export function lbsToKg(lbs) {
+  return lbs * KG_PER_LB;
+}
+
+export function cmToIn(cm) {
+  return cm / CM_PER_IN;
+}
+
+export function inToCm(inches) {
+  return inches * CM_PER_IN;
+}
+
+export function cmToFtIn(cm) {
+  const totalIn = Math.round(cmToIn(cm));
+  return { ft: Math.floor(totalIn / 12), inch: totalIn % 12 };
+}
+
+export function ftInToCm(ft, inch) {
+  return inToCm(Number(ft || 0) * 12 + Number(inch || 0));
+}
+
+export function round1(n) {
+  return Math.round(n * 10) / 10;
+}
+
 // Trailing N-calendar-day average, computed per point from however many
 // entries actually fall in that window — not a fixed entry count, since
 // weigh-ins aren't always daily. points: [{date, value}], chronological.
