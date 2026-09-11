@@ -116,6 +116,15 @@ export function IconCheck(props) {
   );
 }
 
+export function IconPill(props) {
+  return (
+    <svg {...common} {...props}>
+      <rect x="4.5" y="9.5" width="15" height="7" rx="3.5" transform="rotate(-45 12 13)" />
+      <path d="M9 9l6 6" />
+    </svg>
+  );
+}
+
 export function IconPencil(props) {
   return (
     <svg {...common} {...props}>

@@ -10,6 +10,8 @@ const KEYS = {
   workoutPlan: 'fittrack_workout_plan',
   meals: 'fittrack_meals',
   ingredients: 'fittrack_ingredients',
+  supplements: 'fittrack_supplements',
+  supplementLog: 'fittrack_supplement_log',
 };
 
 function read(key, fallback) {
@@ -153,13 +155,13 @@ export function setWorkoutCompleted(date, done) {
   return map;
 }
 
-// Meals and ingredients are both just "foods" (name + calories + macros) that
-// the user can edit or delete — the only difference is which list they live
-// in and, by convention, whether they represent a whole plate or a single
-// item. Logged entries always copy the values at log time, so editing or
-// deleting a food later never rewrites history.
+// Meals, ingredients and supplements are all just editable lists of objects
+// with an id — the only difference is the shape of the object and which key
+// they're stored under. Logged entries (food log or supplement log) always
+// copy values at log time, so editing or deleting a definition later never
+// rewrites history.
 
-function makeFoodStore(key, seedFn) {
+function makeStore(key, seedFn) {
   const getAll = () => {
     const existing = read(key, null);
     if (existing) return existing;
@@ -192,7 +194,7 @@ function makeFoodStore(key, seedFn) {
   return { getAll, add, update, remove };
 }
 
-const mealStore = makeFoodStore(KEYS.meals, () => [
+const mealStore = makeStore(KEYS.meals, () => [
   { name: 'Chicken & Rice', calories: 620, protein: 52, carbs: 70, fat: 12 },
   { name: 'Minced Beef Pasta', calories: 710, protein: 45, carbs: 78, fat: 22 },
   { name: 'Eggs & Bread', calories: 420, protein: 26, carbs: 38, fat: 18 },
@@ -200,7 +202,7 @@ const mealStore = makeFoodStore(KEYS.meals, () => [
   { name: 'Oats & Yogurt', calories: 380, protein: 24, carbs: 52, fat: 8 },
 ].map((m) => ({ ...m, id: crypto.randomUUID() })));
 
-const ingredientStore = makeFoodStore(KEYS.ingredients, () => [
+const ingredientStore = makeStore(KEYS.ingredients, () => [
   { name: 'Chicken Breast (100g)', calories: 165, protein: 31, carbs: 0, fat: 4 },
   { name: 'White Rice, cooked (100g)', calories: 130, protein: 2.7, carbs: 28, fat: 0.3 },
   { name: 'Egg (1 large)', calories: 78, protein: 6, carbs: 0.6, fat: 5 },
@@ -208,6 +210,10 @@ const ingredientStore = makeFoodStore(KEYS.ingredients, () => [
   { name: 'Greek Yogurt (100g)', calories: 97, protein: 9, carbs: 3.6, fat: 5 },
   { name: 'Almonds (30g)', calories: 174, protein: 6.4, carbs: 6.5, fat: 15 },
 ].map((i) => ({ ...i, id: crypto.randomUUID() })));
+
+const supplementStore = makeStore(KEYS.supplements, () => [
+  { name: 'Creatine', amount: 5, unit: 'g' },
+].map((s) => ({ ...s, id: crypto.randomUUID() })));
 
 export const getMeals = mealStore.getAll;
 export const addMeal = mealStore.add;
@@ -218,6 +224,45 @@ export const getIngredients = ingredientStore.getAll;
 export const addIngredient = ingredientStore.add;
 export const updateIngredient = ingredientStore.update;
 export const deleteIngredient = ingredientStore.remove;
+
+export const getSupplements = supplementStore.getAll;
+export const addSupplement = supplementStore.add;
+export const updateSupplement = supplementStore.update;
+export const deleteSupplement = supplementStore.remove;
+
+// Supplement log: { [date]: { [supplementId]: amountTaken } }. A key's
+// presence (not its value) is what "taken that day" means, so unlogging
+// just deletes the key rather than setting it to zero.
+export function getSupplementLog() {
+  return read(KEYS.supplementLog, {});
+}
+
+export function logSupplement(date, supplementId, amount) {
+  const log = getSupplementLog();
+  const day = { ...(log[date] || {}), [supplementId]: amount };
+  const next = { ...log, [date]: day };
+  write(KEYS.supplementLog, next);
+  return next;
+}
+
+export function unlogSupplement(date, supplementId) {
+  const log = getSupplementLog();
+  const day = { ...(log[date] || {}) };
+  delete day[supplementId];
+  const next = { ...log, [date]: day };
+  write(KEYS.supplementLog, next);
+  return next;
+}
+
+export function getSupplementLastNDays(n) {
+  const log = getSupplementLog();
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const date = todayISO(-i);
+    days.push({ date, taken: log[date] || {} });
+  }
+  return days;
+}
 
 export function exportAllData() {
   return {
@@ -230,6 +275,8 @@ export function exportAllData() {
     workoutPlan: getWorkoutPlan(),
     meals: getMeals(),
     ingredients: getIngredients(),
+    supplements: getSupplements(),
+    supplementLog: getSupplementLog(),
   };
 }
 
@@ -243,4 +290,6 @@ export function importAllData(data) {
   if (data.workoutPlan) write(KEYS.workoutPlan, data.workoutPlan);
   if (data.meals) write(KEYS.meals, data.meals);
   if (data.ingredients) write(KEYS.ingredients, data.ingredients);
+  if (data.supplements) write(KEYS.supplements, data.supplements);
+  if (data.supplementLog) write(KEYS.supplementLog, data.supplementLog);
 }

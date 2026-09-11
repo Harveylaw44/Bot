@@ -4,6 +4,7 @@ import MealsTab from './components/MealsTab.jsx';
 import WeightTab from './components/WeightTab.jsx';
 import PhotosTab from './components/PhotosTab.jsx';
 import GymTab from './components/GymTab.jsx';
+import PillsTab from './components/PillsTab.jsx';
 import SettingsTab from './components/SettingsTab.jsx';
 import {
   IconHome,
@@ -11,6 +12,7 @@ import {
   IconWeight,
   IconPhoto,
   IconGym,
+  IconPill,
   IconSettings,
 } from './components/icons.jsx';
 
@@ -20,6 +22,7 @@ const TABS = [
   { id: 'weight', label: 'Weight', icon: IconWeight, Component: WeightTab },
   { id: 'photos', label: 'Photos', icon: IconPhoto, Component: PhotosTab },
   { id: 'gym', label: 'Gym', icon: IconGym, Component: GymTab },
+  { id: 'pills', label: 'Pills', icon: IconPill, Component: PillsTab },
   { id: 'settings', label: 'Settings', icon: IconSettings, Component: SettingsTab },
 ];
 
