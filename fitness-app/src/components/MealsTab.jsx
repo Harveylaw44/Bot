@@ -14,8 +14,10 @@ import {
   updateIngredient,
   deleteIngredient,
 } from '../storage.js';
+import { computeMealNutrition } from '../mealCalc.js';
 import { DeleteButton, EmptyState } from './shared.jsx';
-import FoodFormSheet from './FoodFormSheet.jsx';
+import IngredientFormSheet from './IngredientFormSheet.jsx';
+import MealFormSheet from './MealFormSheet.jsx';
 import { IconPencil, IconPlus } from './icons.jsx';
 import { formatTime } from '../utils.js';
 
@@ -27,7 +29,7 @@ export default function MealsTab({ refreshTick, onDataChange }) {
   const [meals, setMeals] = useState([]);
   const [ingredients, setIngredients] = useState([]);
   const [justAdded, setJustAdded] = useState(null);
-  const [sheet, setSheet] = useState(null); // { store: 'meals'|'ingredients', item?: food }
+  const [sheet, setSheet] = useState(null); // { item?: meal/ingredient } | null
   const date = todayISO();
 
   useEffect(() => {
@@ -37,7 +39,8 @@ export default function MealsTab({ refreshTick, onDataChange }) {
     setIngredients(getIngredients());
   }, [refreshTick]);
 
-  const allFoods = tab === 'meals' ? meals : ingredients;
+  const isMealsTab = tab === 'meals';
+  const allFoods = isMealsTab ? meals : ingredients;
   const foods = query.trim()
     ? allFoods.filter((f) => f.name.toLowerCase().includes(query.trim().toLowerCase()))
     : allFoods;
@@ -52,14 +55,14 @@ export default function MealsTab({ refreshTick, onDataChange }) {
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
 
-  const handleLog = (food) => {
+  const handleLog = (food, nutrition) => {
     addEntry(date, {
       type: 'meal',
       name: food.name,
-      calories: food.calories,
-      protein: food.protein,
-      carbs: food.carbs,
-      fat: food.fat,
+      calories: Math.round(nutrition.calories),
+      protein: nutrition.protein,
+      carbs: nutrition.carbs,
+      fat: nutrition.fat,
     });
     setJustAdded(food.id);
     setTimeout(() => setJustAdded(null), 350);
@@ -71,23 +74,25 @@ export default function MealsTab({ refreshTick, onDataChange }) {
     onDataChange();
   };
 
-  const openAdd = () => setSheet({ store: tab, item: null });
-  const openEdit = (item) => setSheet({ store: tab, item });
+  const openAdd = () => setSheet({ item: null });
+  const openEdit = (item) => setSheet({ item });
 
-  const handleSave = (values) => {
-    const isMeals = sheet.store === 'meals';
-    if (sheet.item) {
-      isMeals ? updateMeal(sheet.item.id, values) : updateIngredient(sheet.item.id, values);
-    } else {
-      isMeals ? addMeal(values) : addIngredient(values);
-    }
+  const handleSaveMeal = (values) => {
+    if (sheet.item) updateMeal(sheet.item.id, values);
+    else addMeal(values);
+    setSheet(null);
+    onDataChange();
+  };
+
+  const handleSaveIngredient = (values) => {
+    if (sheet.item) updateIngredient(sheet.item.id, values);
+    else addIngredient(values);
     setSheet(null);
     onDataChange();
   };
 
   const handleDeleteFood = () => {
-    const isMeals = sheet.store === 'meals';
-    isMeals ? deleteMeal(sheet.item.id) : deleteIngredient(sheet.item.id);
+    isMealsTab ? deleteMeal(sheet.item.id) : deleteIngredient(sheet.item.id);
     setSheet(null);
     onDataChange();
   };
@@ -130,38 +135,45 @@ export default function MealsTab({ refreshTick, onDataChange }) {
           {query.trim() ? `No matches for "${query.trim()}"` : 'Nothing here yet — add your first one below'}
         </EmptyState>
       ) : (
-        foods.map((food) => (
-          <div
-            key={food.id}
-            className="card"
-            style={{
-              marginBottom: 10,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              border: justAdded === food.id ? '1px solid var(--green)' : '1px solid var(--border)',
-              transition: 'border-color 0.2s ease',
-            }}
-          >
-            <button
-              onClick={() => handleLog(food)}
-              style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0 }}
+        foods.map((food) => {
+          const nutrition = isMealsTab ? computeMealNutrition(food, ingredients) : food;
+          return (
+            <div
+              key={food.id}
+              className="card"
+              style={{
+                marginBottom: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                border: justAdded === food.id ? '1px solid var(--green)' : '1px solid var(--border)',
+                transition: 'border-color 0.2s ease',
+              }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ fontWeight: 700, fontSize: 15.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {food.name}
-                </span>
-                <span style={{ fontWeight: 700, color: 'var(--green)', flexShrink: 0 }}>{food.calories} cal</span>
-              </div>
-              <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 4 }}>
-                P {food.protein}g · C {food.carbs}g · F {food.fat}g
-              </div>
-            </button>
-            <button className="icon-btn" onClick={() => openEdit(food)} aria-label="Edit">
-              <IconPencil />
-            </button>
-          </div>
-        ))
+              <button
+                onClick={() => handleLog(food, nutrition)}
+                style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0 }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {food.name}
+                  </span>
+                  <span style={{ fontWeight: 700, color: 'var(--green)', flexShrink: 0 }}>
+                    {Math.round(nutrition.calories)} cal
+                  </span>
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 4 }}>
+                  P {Math.round(nutrition.protein)}g · C {Math.round(nutrition.carbs)}g · F {Math.round(nutrition.fat)}g
+                  {!isMealsTab && ` · per ${food.servingAmount}${food.unit}`}
+                  {isMealsTab && Array.isArray(food.items) && ` · ${food.items.length} ingredient${food.items.length === 1 ? '' : 's'}`}
+                </div>
+              </button>
+              <button className="icon-btn" onClick={() => openEdit(food)} aria-label="Edit">
+                <IconPencil />
+              </button>
+            </div>
+          );
+        })
       )}
 
       <button
@@ -170,7 +182,7 @@ export default function MealsTab({ refreshTick, onDataChange }) {
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 4 }}
       >
         <IconPlus style={{ width: 16, height: 16 }} />
-        Add {tab === 'meals' ? 'Meal' : 'Ingredient'}
+        Add {isMealsTab ? 'Meal' : 'Ingredient'}
       </button>
 
       <div className="section-label">Today's Total</div>
@@ -219,16 +231,21 @@ export default function MealsTab({ refreshTick, onDataChange }) {
         ))
       )}
 
-      {sheet && (
-        <FoodFormSheet
-          title={
-            sheet.item
-              ? `Edit ${sheet.store === 'meals' ? 'Meal' : 'Ingredient'}`
-              : `Add ${sheet.store === 'meals' ? 'Meal' : 'Ingredient'}`
-          }
+      {sheet && isMealsTab && (
+        <MealFormSheet
+          initial={sheet.item}
+          ingredients={ingredients}
+          onClose={() => setSheet(null)}
+          onSave={handleSaveMeal}
+          onDelete={sheet.item ? handleDeleteFood : undefined}
+        />
+      )}
+
+      {sheet && !isMealsTab && (
+        <IngredientFormSheet
           initial={sheet.item}
           onClose={() => setSheet(null)}
-          onSave={handleSave}
+          onSave={handleSaveIngredient}
           onDelete={sheet.item ? handleDeleteFood : undefined}
         />
       )}

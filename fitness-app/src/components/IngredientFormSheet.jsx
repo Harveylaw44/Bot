@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react';
+import { MEASURE_UNITS, defaultServingAmount } from '../foodUnits.js';
 
 function computeCalories(protein, carbs, fat) {
   return Math.round((Number(protein) || 0) * 4 + (Number(carbs) || 0) * 4 + (Number(fat) || 0) * 9);
 }
 
-// Add/edit sheet shared by Meals and Ingredients — both are just
-// name + calories + macros, saved into whichever store the caller passes.
-export default function FoodFormSheet({ title, initial, onClose, onSave, onDelete }) {
+export default function IngredientFormSheet({ initial, onClose, onSave, onDelete }) {
   const [name, setName] = useState(initial?.name || '');
+  const [unit, setUnit] = useState(initial?.unit || 'g');
+  const [servingAmount, setServingAmount] = useState(String(initial?.servingAmount ?? defaultServingAmount('g')));
+  const [servingTouched, setServingTouched] = useState(!!initial);
   const [protein, setProtein] = useState(initial?.protein ?? '');
   const [carbs, setCarbs] = useState(initial?.carbs ?? '');
   const [fat, setFat] = useState(initial?.fat ?? '');
   const [calories, setCalories] = useState(initial?.calories ?? '');
-  // New foods start in "auto" mode so calories fills itself in as macros are
-  // typed. Editing an existing food respects whatever calories it already
-  // has (it may not follow 4/4/9 exactly) until the macros are touched.
+  // New ingredients start in "auto" calorie mode so it fills itself in as
+  // macros are typed. Editing an existing one respects whatever calories it
+  // already has (may not follow 4/4/9 exactly) until macros are touched.
   const [caloriesAuto, setCaloriesAuto] = useState(!initial);
 
   useEffect(() => {
@@ -23,12 +25,19 @@ export default function FoodFormSheet({ title, initial, onClose, onSave, onDelet
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [protein, carbs, fat, caloriesAuto]);
 
-  const valid = name.trim() && Number(calories) > 0;
+  const handleUnitChange = (nextUnit) => {
+    setUnit(nextUnit);
+    if (!servingTouched) setServingAmount(String(defaultServingAmount(nextUnit)));
+  };
+
+  const valid = name.trim() && Number(calories) > 0 && Number(servingAmount) > 0;
 
   const submit = () => {
     if (!valid) return;
     onSave({
       name: name.trim(),
+      unit,
+      servingAmount: Number(servingAmount) || 1,
       calories: Math.round(Number(calories)) || 0,
       protein: Number(protein) || 0,
       carbs: Number(carbs) || 0,
@@ -42,7 +51,7 @@ export default function FoodFormSheet({ title, initial, onClose, onSave, onDelet
         <button className="modal-close" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <div className="modal-title">{title}</div>
+        <div className="modal-title">{initial ? 'Edit Ingredient' : 'Add Ingredient'}</div>
 
         <input
           type="text"
@@ -52,6 +61,33 @@ export default function FoodFormSheet({ title, initial, onClose, onSave, onDelet
           autoFocus
           style={fieldStyle}
         />
+
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 4 }}>
+          NUTRITION PER
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <input
+            type="number"
+            inputMode="decimal"
+            value={servingAmount}
+            onChange={(e) => {
+              setServingAmount(e.target.value);
+              setServingTouched(true);
+            }}
+            style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
+          />
+          <select
+            value={unit}
+            onChange={(e) => handleUnitChange(e.target.value)}
+            style={{ ...selectStyle, marginBottom: 0, flex: 1.6 }}
+          >
+            {MEASURE_UNITS.map((u) => (
+              <option key={u.value} value={u.value}>
+                {u.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
           <input
@@ -136,4 +172,10 @@ const fieldStyle = {
   color: 'var(--text)',
   fontSize: 16,
   marginBottom: 10,
+};
+
+const selectStyle = {
+  ...fieldStyle,
+  appearance: 'none',
+  WebkitAppearance: 'none',
 };
