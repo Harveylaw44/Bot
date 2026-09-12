@@ -16,6 +16,8 @@ const KEYS = {
   measurements: 'fittrack_measurements',
   water: 'fittrack_water',
   timerSettings: 'fittrack_timer_settings',
+  shoppingItems: 'fittrack_shopping_items',
+  shoppingHistory: 'fittrack_shopping_history',
 };
 
 function read(key, fallback) {
@@ -403,6 +405,48 @@ export function getGymStreak() {
   return streak;
 }
 
+// Shopping items are a persistent, reusable weekly trolley — checking one
+// off means "got it this shop", not "delete it forever". Completing a shop
+// sums the checked items into a dated history entry, then unchecks
+// everything so the same list is ready to go through again next week.
+const shoppingItemStore = makeStore(KEYS.shoppingItems, () => []);
+
+export const getShoppingItems = shoppingItemStore.getAll;
+export const addShoppingItem = (item) => shoppingItemStore.add({ ...item, checked: false });
+export const updateShoppingItem = shoppingItemStore.update;
+export const deleteShoppingItem = shoppingItemStore.remove;
+
+export function toggleShoppingItem(id) {
+  const next = getShoppingItems().map((i) => (i.id === id ? { ...i, checked: !i.checked } : i));
+  write(KEYS.shoppingItems, next);
+  return next;
+}
+
+export function getShoppingHistory() {
+  return read(KEYS.shoppingHistory, []);
+}
+
+export function completeShop() {
+  const items = getShoppingItems();
+  const checked = items.filter((i) => i.checked);
+  const total = checked.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
+
+  const historyEntry = { id: crypto.randomUUID(), date: todayISO(), total, itemCount: checked.length };
+  const nextHistory = [historyEntry, ...getShoppingHistory()];
+  write(KEYS.shoppingHistory, nextHistory);
+
+  const resetItems = items.map((i) => ({ ...i, checked: false }));
+  write(KEYS.shoppingItems, resetItems);
+
+  return { history: nextHistory, items: resetItems };
+}
+
+export function deleteShoppingHistoryEntry(id) {
+  const next = getShoppingHistory().filter((h) => h.id !== id);
+  write(KEYS.shoppingHistory, next);
+  return next;
+}
+
 export function exportAllData() {
   return {
     exportedAt: new Date().toISOString(),
@@ -420,6 +464,8 @@ export function exportAllData() {
     measurements: getMeasurements(),
     water: getWaterEntries(),
     timerSettings: getTimerSettings(),
+    shoppingItems: getShoppingItems(),
+    shoppingHistory: getShoppingHistory(),
   };
 }
 
@@ -439,4 +485,6 @@ export function importAllData(data) {
   if (data.measurements) write(KEYS.measurements, data.measurements);
   if (data.water) write(KEYS.water, data.water);
   if (data.timerSettings) write(KEYS.timerSettings, data.timerSettings);
+  if (data.shoppingItems) write(KEYS.shoppingItems, data.shoppingItems);
+  if (data.shoppingHistory) write(KEYS.shoppingHistory, data.shoppingHistory);
 }
