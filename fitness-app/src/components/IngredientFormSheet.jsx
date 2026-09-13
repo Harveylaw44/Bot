@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MEASURE_UNITS, defaultServingAmount } from '../foodUnits.js';
+import { round1 } from '../utils.js';
 
 function computeCalories(protein, carbs, fat) {
   return Math.round((Number(protein) || 0) * 4 + (Number(carbs) || 0) * 4 + (Number(fat) || 0) * 9);
@@ -34,7 +35,26 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
 
   const handleUnitChange = (nextUnit) => {
     setUnit(nextUnit);
-    if (!servingTouched) setServingAmount(String(defaultServingAmount(nextUnit)));
+    if (servingTouched) return;
+
+    // Switching units resets the reference amount to that unit's default
+    // (e.g. 100g -> 1 piece) — the macros were only ever true for the old
+    // amount, so they'd otherwise sit there unchanged and now mean
+    // something completely different (the same "165 cal" mislabelled from
+    // "per 100g" to "per 1 piece"). Scale them by the same ratio so they
+    // stay accurate for whatever amount is now shown.
+    const nextAmount = defaultServingAmount(nextUnit);
+    const prevAmount = Number(servingAmount) || 1;
+    const ratio = nextAmount / prevAmount;
+    setServingAmount(String(nextAmount));
+    if (ratio !== 1) {
+      setProtein((p) => (p === '' ? p : round1(Number(p) * ratio)));
+      setCarbs((c) => (c === '' ? c : round1(Number(c) * ratio)));
+      setFat((f) => (f === '' ? f : round1(Number(f) * ratio)));
+      if (!caloriesAuto) {
+        setCalories((cal) => (cal === '' ? cal : String(Math.round(Number(cal) * ratio))));
+      }
+    }
   };
 
   const valid = name.trim() && Number(calories) > 0 && Number(servingAmount) > 0;
