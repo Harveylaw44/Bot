@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { searchFoods } from '../foodSearch.js';
 import { EmptyState } from './shared.jsx';
+import BarcodeScannerSheet from './BarcodeScannerSheet.jsx';
+import { IconBarcode } from './icons.jsx';
 
 export default function FoodDatabaseSearchSheet({ onClose, onPick }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(null); // null = not searched yet
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [scanning, setScanning] = useState(false);
 
   const runSearch = async () => {
     const q = query.trim();
@@ -56,6 +59,23 @@ export default function FoodDatabaseSearchSheet({ onClose, onPick }) {
           </button>
         </div>
 
+        <button
+          className="btn btn-block"
+          onClick={() => setScanning(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            marginBottom: 14,
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <IconBarcode style={{ width: 16, height: 16 }} />
+          Scan Barcode
+        </button>
+
         {error && (
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--red)', marginBottom: 14 }}>{error}</div>
         )}
@@ -100,6 +120,8 @@ export default function FoodDatabaseSearchSheet({ onClose, onPick }) {
             into your own ingredient list, so once you've added one it works offline too.
           </div>
         )}
+
+        {scanning && <BarcodeScannerSheet onClose={() => setScanning(false)} onFound={onPick} />}
       </div>
     </div>
   );

@@ -203,6 +203,14 @@ export function IconSearch(props) {
   );
 }
 
+export function IconBarcode(props) {
+  return (
+    <svg {...common} {...props}>
+      <path d="M4 5v14M8 5v14M11 5v14M13 5v14M16 5v14M20 5v14" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 export function IconCart(props) {
   return (
     <svg {...common} {...props}>
