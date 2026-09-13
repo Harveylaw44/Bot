@@ -3,7 +3,16 @@
 // browser use — a good fit for a static app with no backend of its own.
 // Its *_100g nutrient fields are already normalized per 100g, which lines
 // up exactly with this app's own "g" ingredient reference amount.
-const SEARCH_URL = 'https://world.openfoodfacts.org/api/v2/search';
+//
+// The free-text search lives at the legacy /cgi/search.pl endpoint, not
+// /api/v2/search — the v2 endpoint is built for filtering by structured
+// fields (category tags, barcode, etc.) and its search_terms matching is
+// unreliable for multi-word natural queries like "jumbo oats", often
+// missing well-known products entirely. /cgi/search.pl is what OFF's own
+// apps and most community integrations use for exactly this kind of
+// keyword search, with sort_by=unique_scans_n surfacing the products
+// people actually scan/buy first instead of an arbitrary/obscure subset.
+const SEARCH_URL = 'https://world.openfoodfacts.org/cgi/search.pl';
 
 function round1(n) {
   return Math.round(n * 10) / 10;
@@ -44,7 +53,16 @@ export async function searchFoods(query) {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  const url = `${SEARCH_URL}?search_terms=${encodeURIComponent(trimmed)}&fields=product_name,brands,nutriments&page_size=25&json=1`;
+  const params = new URLSearchParams({
+    search_terms: trimmed,
+    search_simple: '1',
+    action: 'process',
+    json: '1',
+    page_size: '40',
+    sort_by: 'unique_scans_n',
+    fields: 'product_name,brands,nutriments',
+  });
+  const url = `${SEARCH_URL}?${params.toString()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Food database request failed (${res.status})`);
   const data = await res.json();
@@ -66,5 +84,5 @@ export async function searchFoods(query) {
       };
     })
     .filter(Boolean)
-    .slice(0, 20);
+    .slice(0, 25);
 }
