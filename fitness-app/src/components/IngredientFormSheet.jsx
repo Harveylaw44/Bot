@@ -51,7 +51,7 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
         <button className="modal-close" onClick={onClose} aria-label="Close">
           ×
         </button>
-        <div className="modal-title">{initial ? 'Edit Ingredient' : 'Add Ingredient'}</div>
+        <div className="modal-title">{initial?.id ? 'Edit Ingredient' : 'Add Ingredient'}</div>
 
         <input
           type="text"

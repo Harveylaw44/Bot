@@ -18,7 +18,8 @@ import { computeMealNutrition } from '../mealCalc.js';
 import { DeleteButton, EmptyState } from './shared.jsx';
 import IngredientFormSheet from './IngredientFormSheet.jsx';
 import MealFormSheet from './MealFormSheet.jsx';
-import { IconPencil, IconPlus } from './icons.jsx';
+import FoodDatabaseSearchSheet from './FoodDatabaseSearchSheet.jsx';
+import { IconPencil, IconPlus, IconSearch } from './icons.jsx';
 import { formatTime } from '../utils.js';
 
 export default function MealsTab({ refreshTick, onDataChange }) {
@@ -30,6 +31,7 @@ export default function MealsTab({ refreshTick, onDataChange }) {
   const [ingredients, setIngredients] = useState([]);
   const [justAdded, setJustAdded] = useState(null);
   const [sheet, setSheet] = useState(null); // { item?: meal/ingredient } | null
+  const [dbSearch, setDbSearch] = useState(false);
   const date = todayISO();
 
   useEffect(() => {
@@ -85,7 +87,7 @@ export default function MealsTab({ refreshTick, onDataChange }) {
   };
 
   const handleSaveIngredient = (values) => {
-    if (sheet.item) updateIngredient(sheet.item.id, values);
+    if (sheet.item?.id) updateIngredient(sheet.item.id, values);
     else addIngredient(values);
     setSheet(null);
     onDataChange();
@@ -95,6 +97,21 @@ export default function MealsTab({ refreshTick, onDataChange }) {
     isMealsTab ? deleteMeal(sheet.item.id) : deleteIngredient(sheet.item.id);
     setSheet(null);
     onDataChange();
+  };
+
+  const handlePickFromDatabase = (food) => {
+    setDbSearch(false);
+    setSheet({
+      item: {
+        name: food.name,
+        unit: 'g',
+        servingAmount: 100,
+        calories: food.calories,
+        protein: food.protein,
+        carbs: food.carbs,
+        fat: food.fat,
+      },
+    });
   };
 
   return (
@@ -179,11 +196,30 @@ export default function MealsTab({ refreshTick, onDataChange }) {
       <button
         className="btn btn-secondary btn-block"
         onClick={openAdd}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 4 }}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: isMealsTab ? 4 : 10 }}
       >
         <IconPlus style={{ width: 16, height: 16 }} />
         Add {isMealsTab ? 'Meal' : 'Ingredient'}
       </button>
+
+      {!isMealsTab && (
+        <button
+          className="btn btn-block"
+          onClick={() => setDbSearch(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            marginBottom: 4,
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <IconSearch style={{ width: 16, height: 16 }} />
+          Search Food Database
+        </button>
+      )}
 
       <div className="section-label">Today's Total</div>
       <div className="card" style={{ marginBottom: 18 }}>
@@ -246,8 +282,12 @@ export default function MealsTab({ refreshTick, onDataChange }) {
           initial={sheet.item}
           onClose={() => setSheet(null)}
           onSave={handleSaveIngredient}
-          onDelete={sheet.item ? handleDeleteFood : undefined}
+          onDelete={sheet.item?.id ? handleDeleteFood : undefined}
         />
+      )}
+
+      {dbSearch && (
+        <FoodDatabaseSearchSheet onClose={() => setDbSearch(false)} onPick={handlePickFromDatabase} />
       )}
     </>
   );

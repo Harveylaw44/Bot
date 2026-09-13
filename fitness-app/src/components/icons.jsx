@@ -194,6 +194,15 @@ export function IconPencil(props) {
   );
 }
 
+export function IconSearch(props) {
+  return (
+    <svg {...common} {...props}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m20 20-4.8-4.8" />
+    </svg>
+  );
+}
+
 export function IconCart(props) {
   return (
     <svg {...common} {...props}>
