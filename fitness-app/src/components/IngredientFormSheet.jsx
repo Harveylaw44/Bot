@@ -9,7 +9,14 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
   const [name, setName] = useState(initial?.name || '');
   const [unit, setUnit] = useState(initial?.unit || 'g');
   const [servingAmount, setServingAmount] = useState(String(initial?.servingAmount ?? defaultServingAmount('g')));
-  const [servingTouched, setServingTouched] = useState(!!initial);
+  // Tracks whether the user has typed directly into the serving-amount
+  // field during THIS time the form is open — not whether the ingredient
+  // already had data. Always starts false so switching the unit dropdown
+  // (add, edit, or a database-search prefill alike) resets the amount to
+  // that unit's sensible default, right up until the user overrides it
+  // by hand — otherwise editing/prefilled ingredients could never have
+  // their serving amount follow a unit change at all.
+  const [servingTouched, setServingTouched] = useState(false);
   const [protein, setProtein] = useState(initial?.protein ?? '');
   const [carbs, setCarbs] = useState(initial?.carbs ?? '');
   const [fat, setFat] = useState(initial?.fat ?? '');
