@@ -266,7 +266,22 @@ export const addMeal = mealStore.add;
 export const updateMeal = mealStore.update;
 export const deleteMeal = mealStore.remove;
 
-export const getIngredients = ingredientStore.getAll;
+// Ingredients created before units existed (a flat calories/macros number
+// with no unit/servingAmount) get backfilled here — as unit 'piece',
+// servingAmount 1, so the number they originally entered still means
+// exactly "one of these" everywhere it's used, instead of rendering as
+// "per undefinedundefined" and silently mis-scaling in meals.
+export function getIngredients() {
+  const all = ingredientStore.getAll();
+  let changed = false;
+  const normalized = all.map((ing) => {
+    if (ing.unit && ing.servingAmount) return ing;
+    changed = true;
+    return { ...ing, unit: ing.unit || 'piece', servingAmount: ing.servingAmount || 1 };
+  });
+  if (changed) write(KEYS.ingredients, normalized);
+  return normalized;
+}
 export const addIngredient = ingredientStore.add;
 export const updateIngredient = ingredientStore.update;
 export const deleteIngredient = ingredientStore.remove;
