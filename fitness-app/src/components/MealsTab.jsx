@@ -21,10 +21,12 @@ import MealFormSheet from './MealFormSheet.jsx';
 import FoodDatabaseSearchSheet from './FoodDatabaseSearchSheet.jsx';
 import { IconPencil, IconPlus, IconSearch } from './icons.jsx';
 import { formatTime } from '../utils.js';
+import { MEAL_CATEGORIES, categoryLabel } from '../mealCategories.js';
 
 export default function MealsTab({ refreshTick, onDataChange }) {
   const [tab, setTab] = useState('meals'); // 'meals' | 'ingredients'
   const [query, setQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState(''); // '' (All) | 'breakfast' | 'lunch' | 'dinner' | 'snack'
   const [settings, setSettings] = useState(getSettings());
   const [entries, setEntries] = useState([]);
   const [meals, setMeals] = useState([]);
@@ -43,9 +45,9 @@ export default function MealsTab({ refreshTick, onDataChange }) {
 
   const isMealsTab = tab === 'meals';
   const allFoods = isMealsTab ? meals : ingredients;
-  const foods = query.trim()
-    ? allFoods.filter((f) => f.name.toLowerCase().includes(query.trim().toLowerCase()))
-    : allFoods;
+  const foods = allFoods
+    .filter((f) => !categoryFilter || f.category === categoryFilter)
+    .filter((f) => !query.trim() || f.name.toLowerCase().includes(query.trim().toLowerCase()));
   const loggedFoods = entries.filter((e) => e.type === 'meal');
   const totals = loggedFoods.reduce(
     (acc, m) => ({
@@ -127,6 +129,21 @@ export default function MealsTab({ refreshTick, onDataChange }) {
         </button>
       </div>
 
+      <div className="chip-row">
+        <button className={categoryFilter === '' ? 'chip active' : 'chip'} onClick={() => setCategoryFilter('')}>
+          All
+        </button>
+        {MEAL_CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            className={categoryFilter === c.value ? 'chip active' : 'chip'}
+            onClick={() => setCategoryFilter(c.value)}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
       {allFoods.length > 5 && (
         <input
           type="text"
@@ -149,7 +166,11 @@ export default function MealsTab({ refreshTick, onDataChange }) {
       <div className="section-label">Tap to Log</div>
       {foods.length === 0 ? (
         <EmptyState>
-          {query.trim() ? `No matches for "${query.trim()}"` : 'Nothing here yet — add your first one below'}
+          {query.trim()
+            ? `No matches for "${query.trim()}"`
+            : categoryFilter
+              ? `No ${categoryLabel(categoryFilter)} ${tab} yet — add one below and tag it ${categoryLabel(categoryFilter)}`
+              : 'Nothing here yet — add your first one below'}
         </EmptyState>
       ) : (
         foods.map((food) => {
@@ -180,6 +201,9 @@ export default function MealsTab({ refreshTick, onDataChange }) {
                   </span>
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 4 }}>
+                  {!categoryFilter && food.category && (
+                    <span style={{ color: 'var(--green)', fontWeight: 700 }}>{categoryLabel(food.category)} · </span>
+                  )}
                   P {Math.round(nutrition.protein)}g · C {Math.round(nutrition.carbs)}g · F {Math.round(nutrition.fat)}g
                   {!isMealsTab && ` · per ${food.servingAmount}${food.unit}`}
                   {isMealsTab && Array.isArray(food.items) && ` · ${food.items.length} ingredient${food.items.length === 1 ? '' : 's'}`}

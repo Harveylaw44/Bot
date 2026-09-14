@@ -227,19 +227,19 @@ function makeStore(key, seedFn) {
 // 1-unit reference since those are already serving-sized. Meals are
 // recipes built from these, scaled by quantity — see mealCalc.js.
 const ingredientStore = makeStore(KEYS.ingredients, () => [
-  { name: 'Chicken Breast', unit: 'g', servingAmount: 100, calories: 165, protein: 31, carbs: 0, fat: 4 },
-  { name: 'Rice, cooked', unit: 'g', servingAmount: 100, calories: 130, protein: 2.7, carbs: 28, fat: 0.3 },
-  { name: 'Minced Beef (5% fat)', unit: 'g', servingAmount: 100, calories: 137, protein: 22, carbs: 0, fat: 5 },
-  { name: 'Pasta, cooked', unit: 'g', servingAmount: 100, calories: 131, protein: 5, carbs: 25, fat: 1.1 },
-  { name: 'Tuna, canned in water', unit: 'g', servingAmount: 100, calories: 116, protein: 26, carbs: 0, fat: 1 },
-  { name: 'Oats', unit: 'g', servingAmount: 100, calories: 389, protein: 17, carbs: 66, fat: 7 },
-  { name: 'Greek Yogurt', unit: 'g', servingAmount: 100, calories: 97, protein: 9, carbs: 3.6, fat: 5 },
-  { name: 'Almonds', unit: 'g', servingAmount: 100, calories: 579, protein: 21, carbs: 22, fat: 50 },
+  { name: 'Chicken Breast', unit: 'g', servingAmount: 100, calories: 165, protein: 31, carbs: 0, fat: 4, category: 'dinner' },
+  { name: 'Rice, cooked', unit: 'g', servingAmount: 100, calories: 130, protein: 2.7, carbs: 28, fat: 0.3, category: 'dinner' },
+  { name: 'Minced Beef (5% fat)', unit: 'g', servingAmount: 100, calories: 137, protein: 22, carbs: 0, fat: 5, category: 'dinner' },
+  { name: 'Pasta, cooked', unit: 'g', servingAmount: 100, calories: 131, protein: 5, carbs: 25, fat: 1.1, category: 'dinner' },
+  { name: 'Tuna, canned in water', unit: 'g', servingAmount: 100, calories: 116, protein: 26, carbs: 0, fat: 1, category: 'lunch' },
+  { name: 'Oats', unit: 'g', servingAmount: 100, calories: 389, protein: 17, carbs: 66, fat: 7, category: 'breakfast' },
+  { name: 'Greek Yogurt', unit: 'g', servingAmount: 100, calories: 97, protein: 9, carbs: 3.6, fat: 5, category: 'breakfast' },
+  { name: 'Almonds', unit: 'g', servingAmount: 100, calories: 579, protein: 21, carbs: 22, fat: 50, category: 'snack' },
   { name: 'Olive Oil', unit: 'tbsp', servingAmount: 1, calories: 119, protein: 0, carbs: 0, fat: 13.5 },
-  { name: 'Butter', unit: 'tsp', servingAmount: 1, calories: 34, protein: 0, carbs: 0, fat: 3.8 },
-  { name: 'Egg', unit: 'piece', servingAmount: 1, calories: 78, protein: 6, carbs: 0.6, fat: 5 },
-  { name: 'Banana', unit: 'piece', servingAmount: 1, calories: 105, protein: 1.3, carbs: 27, fat: 0.4 },
-  { name: 'Bread, white, sliced', unit: 'piece', servingAmount: 1, calories: 79, protein: 3, carbs: 15, fat: 1 },
+  { name: 'Butter', unit: 'tsp', servingAmount: 1, calories: 34, protein: 0, carbs: 0, fat: 3.8, category: 'breakfast' },
+  { name: 'Egg', unit: 'piece', servingAmount: 1, calories: 78, protein: 6, carbs: 0.6, fat: 5, category: 'breakfast' },
+  { name: 'Banana', unit: 'piece', servingAmount: 1, calories: 105, protein: 1.3, carbs: 27, fat: 0.4, category: 'snack' },
+  { name: 'Bread, white, sliced', unit: 'piece', servingAmount: 1, calories: 79, protein: 3, carbs: 15, fat: 1, category: 'breakfast' },
 ].map((i) => ({ ...i, id: crypto.randomUUID() })));
 
 const mealStore = makeStore(KEYS.meals, () => {
@@ -248,14 +248,15 @@ const mealStore = makeStore(KEYS.meals, () => {
   const item = (name, quantity) => ({ type: 'ingredient', ingredientId: idOf(name), quantity });
 
   return [
-    { name: 'Chicken & Rice', items: [item('Chicken Breast', 200), item('Rice, cooked', 200)] },
+    { name: 'Chicken & Rice', category: 'dinner', items: [item('Chicken Breast', 200), item('Rice, cooked', 200)] },
     {
       name: 'Minced Beef Pasta',
+      category: 'dinner',
       items: [item('Minced Beef (5% fat)', 200), item('Pasta, cooked', 150), item('Olive Oil', 1)],
     },
-    { name: 'Eggs & Bread', items: [item('Egg', 3), item('Bread, white, sliced', 2), item('Butter', 1)] },
-    { name: 'Tuna Pasta', items: [item('Tuna, canned in water', 150), item('Pasta, cooked', 150), item('Olive Oil', 1)] },
-    { name: 'Oats & Yogurt', items: [item('Oats', 60), item('Greek Yogurt', 150), item('Banana', 1)] },
+    { name: 'Eggs & Bread', category: 'breakfast', items: [item('Egg', 3), item('Bread, white, sliced', 2), item('Butter', 1)] },
+    { name: 'Tuna Pasta', category: 'lunch', items: [item('Tuna, canned in water', 150), item('Pasta, cooked', 150), item('Olive Oil', 1)] },
+    { name: 'Oats & Yogurt', category: 'breakfast', items: [item('Oats', 60), item('Greek Yogurt', 150), item('Banana', 1)] },
   ].map((m) => ({ ...m, id: crypto.randomUUID() }));
 });
 

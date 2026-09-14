@@ -4,10 +4,12 @@ import { scaleIngredient } from '../foodUnits.js';
 import { DeleteButton } from './shared.jsx';
 import { IconPlus } from './icons.jsx';
 import MealItemPickerSheet from './MealItemPickerSheet.jsx';
+import { MEAL_CATEGORIES } from '../mealCategories.js';
 
 export default function MealFormSheet({ initial, ingredients, onClose, onSave, onDelete }) {
   const migrated = initial ? migrateLegacyMeal(initial) : null;
   const [name, setName] = useState(migrated?.name || '');
+  const [category, setCategory] = useState(migrated?.category || '');
   const [items, setItems] = useState(migrated?.items || []);
   const [showPicker, setShowPicker] = useState(false);
 
@@ -27,7 +29,7 @@ export default function MealFormSheet({ initial, ingredients, onClose, onSave, o
 
   const submit = () => {
     if (!valid) return;
-    onSave({ name: name.trim(), items });
+    onSave({ name: name.trim(), category, items });
   };
 
   return (
@@ -50,6 +52,21 @@ export default function MealFormSheet({ initial, ingredients, onClose, onSave, o
           autoFocus
           style={fieldStyle}
         />
+
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 8 }}>
+          WHEN (OPTIONAL)
+        </div>
+        <div className="chip-row" style={{ marginBottom: 18 }}>
+          {MEAL_CATEGORIES.map((c) => (
+            <button
+              key={c.value}
+              className={category === c.value ? 'chip active' : 'chip'}
+              onClick={() => setCategory(category === c.value ? '' : c.value)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
 
         <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 8 }}>
           INGREDIENTS

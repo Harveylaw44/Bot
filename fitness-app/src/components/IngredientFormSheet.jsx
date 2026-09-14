@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { MEASURE_UNITS, defaultServingAmount } from '../foodUnits.js';
 import { round1 } from '../utils.js';
+import { MEAL_CATEGORIES } from '../mealCategories.js';
 
 function computeCalories(protein, carbs, fat) {
   return Math.round((Number(protein) || 0) * 4 + (Number(carbs) || 0) * 4 + (Number(fat) || 0) * 9);
@@ -8,6 +9,7 @@ function computeCalories(protein, carbs, fat) {
 
 export default function IngredientFormSheet({ initial, onClose, onSave, onDelete }) {
   const [name, setName] = useState(initial?.name || '');
+  const [category, setCategory] = useState(initial?.category || '');
   const [unit, setUnit] = useState(initial?.unit || 'g');
   const [servingAmount, setServingAmount] = useState(String(initial?.servingAmount ?? defaultServingAmount('g')));
   // Tracks whether the user has typed directly into the serving-amount
@@ -90,6 +92,7 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
     if (!valid) return;
     onSave({
       name: name.trim(),
+      category,
       unit,
       servingAmount: Number(servingAmount) || 1,
       calories: Math.round(Number(calories)) || 0,
@@ -115,6 +118,21 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
           autoFocus
           style={fieldStyle}
         />
+
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 8 }}>
+          WHEN (OPTIONAL)
+        </div>
+        <div className="chip-row">
+          {MEAL_CATEGORIES.map((c) => (
+            <button
+              key={c.value}
+              className={category === c.value ? 'chip active' : 'chip'}
+              onClick={() => setCategory(category === c.value ? '' : c.value)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
 
         <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 4 }}>
           NUTRITION PER
