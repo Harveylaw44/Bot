@@ -33,28 +33,34 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [protein, carbs, fat, caloriesAuto]);
 
-  const scaleMacros = (ratio) => {
-    setProtein((p) => (p === '' ? p : round1(Number(p) * ratio)));
-    setCarbs((c) => (c === '' ? c : round1(Number(c) * ratio)));
-    setFat((f) => (f === '' ? f : round1(Number(f) * ratio)));
-    if (!caloriesAuto) {
-      setCalories((cal) => (cal === '' ? cal : String(Math.round(Number(cal) * ratio))));
-    }
+  // "Nutrition per 1 unit" — the actual source of truth the amount field
+  // scales against. Recomputed (not compounded) on every amount keystroke,
+  // so results stay exact instead of drifting through repeated rounding,
+  // and updated whenever a macro is edited directly so a hand-typed
+  // correction becomes the new basis for any further amount changes.
+  const density = useRef({
+    protein: (Number(initial?.protein) || 0) / (Number(initial?.servingAmount) || 1),
+    carbs: (Number(initial?.carbs) || 0) / (Number(initial?.servingAmount) || 1),
+    fat: (Number(initial?.fat) || 0) / (Number(initial?.servingAmount) || 1),
+    calories: (Number(initial?.calories) || 0) / (Number(initial?.servingAmount) || 1),
+  });
+
+  const handleAmountChange = (value) => {
+    setServingAmount(value);
+    setServingTouched(true);
+    const amt = Number(value);
+    if (!(amt > 0)) return;
+    const d = density.current;
+    setProtein(round1(d.protein * amt));
+    setCarbs(round1(d.carbs * amt));
+    setFat(round1(d.fat * amt));
+    if (!caloriesAuto) setCalories(String(Math.round(d.calories * amt)));
   };
 
-  const clearMacros = () => {
-    setProtein('');
-    setCarbs('');
-    setFat('');
-    setCalories('');
-    setCaloriesAuto(true);
+  const updateDensity = (field, value) => {
+    const amt = Number(servingAmount) || 1;
+    density.current = { ...density.current, [field]: (Number(value) || 0) / amt };
   };
-
-  // Baseline the amount-scaling math is measured against — updated
-  // whenever the amount settles on a new value, whether from typing or a
-  // unit switch, so the *next* change scales from wherever things
-  // actually are now rather than compounding against the original value.
-  const amountBaseline = useRef(Number(initial?.servingAmount) || defaultServingAmount('g'));
 
   const handleUnitChange = (nextUnit) => {
     setUnit(nextUnit);
@@ -63,28 +69,19 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
     const nextAmount = defaultServingAmount(nextUnit);
     const prevAmount = Number(servingAmount) || 1;
     setServingAmount(String(nextAmount));
-    amountBaseline.current = nextAmount;
-
     if (nextAmount === prevAmount) return;
+
     // Switching between a weight/volume unit (g/ml, 100-reference) and a
     // count unit (tbsp/tsp/piece, 1-reference) has no real conversion we
     // can invent — scaling by that raw amount ratio produced nonsense
     // (e.g. a 300cal/100g bread becoming "3 cal" for "1 piece"). Clear
     // the macros instead so the true per-unit values get entered fresh.
-    clearMacros();
-  };
-
-  // Amount edits within the SAME unit (e.g. 100g -> 50g) are simple,
-  // valid proportional scaling — applied once the number settles (on
-  // blur) rather than per keystroke, so typing "50" doesn't scale
-  // against each intermediate digit.
-  const handleAmountBlur = () => {
-    const newAmount = Number(servingAmount);
-    const baseline = amountBaseline.current;
-    if (newAmount > 0 && baseline > 0 && newAmount !== baseline) {
-      scaleMacros(newAmount / baseline);
-    }
-    if (newAmount > 0) amountBaseline.current = newAmount;
+    setProtein('');
+    setCarbs('');
+    setFat('');
+    setCalories('');
+    setCaloriesAuto(true);
+    density.current = { protein: 0, carbs: 0, fat: 0, calories: 0 };
   };
 
   const valid = name.trim() && Number(calories) > 0 && Number(servingAmount) > 0;
@@ -127,11 +124,7 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
             type="number"
             inputMode="decimal"
             value={servingAmount}
-            onChange={(e) => {
-              setServingAmount(e.target.value);
-              setServingTouched(true);
-            }}
-            onBlur={handleAmountBlur}
+            onChange={(e) => handleAmountChange(e.target.value)}
             style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
           />
           <select
@@ -153,7 +146,10 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
             inputMode="decimal"
             placeholder="Protein (g)"
             value={protein}
-            onChange={(e) => setProtein(e.target.value)}
+            onChange={(e) => {
+              setProtein(e.target.value);
+              updateDensity('protein', e.target.value);
+            }}
             style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
           />
           <input
@@ -161,7 +157,10 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
             inputMode="decimal"
             placeholder="Carbs (g)"
             value={carbs}
-            onChange={(e) => setCarbs(e.target.value)}
+            onChange={(e) => {
+              setCarbs(e.target.value);
+              updateDensity('carbs', e.target.value);
+            }}
             style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
           />
           <input
@@ -169,7 +168,10 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
             inputMode="decimal"
             placeholder="Fat (g)"
             value={fat}
-            onChange={(e) => setFat(e.target.value)}
+            onChange={(e) => {
+              setFat(e.target.value);
+              updateDensity('fat', e.target.value);
+            }}
             style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
           />
         </div>
@@ -182,6 +184,7 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
           onChange={(e) => {
             setCalories(e.target.value);
             setCaloriesAuto(false);
+            updateDensity('calories', e.target.value);
           }}
           style={{ ...fieldStyle, marginBottom: 4 }}
         />
