@@ -18,6 +18,7 @@ import { ProgressBar, DeleteButton, EmptyState, CalorieBarChart } from './shared
 import QuickAddSheet from './QuickAddSheet.jsx';
 import CalendarSection from './CalendarSection.jsx';
 import SkipTimerSheet from './SkipTimerSheet.jsx';
+import RoutineSection from './RoutineSection.jsx';
 import {
   IconMeals,
   IconCardio,
@@ -156,6 +157,8 @@ export default function TodayTab({ refreshTick, onDataChange, goToTab }) {
           </div>
         </div>
       </div>
+
+      <RoutineSection refreshTick={refreshTick} onDataChange={onDataChange} />
 
       <div className="card" style={{ marginBottom: 18 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>

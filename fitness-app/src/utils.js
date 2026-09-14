@@ -1,8 +1,13 @@
-// green / yellow / red status against a goal-based remaining value.
+// green / yellow / red status against a goal-based remaining value. Being
+// a little over isn't a crisis — within the same 10% margin that turns
+// the approach to the goal yellow, going over stays yellow too. Red is
+// reserved for meaningfully over goal.
 export function calorieStatus(remaining, goal) {
-  if (remaining < 0) return 'red';
-  if (remaining <= goal * 0.1) return 'yellow';
-  return 'green';
+  if (remaining >= 0) {
+    return remaining <= goal * 0.1 ? 'yellow' : 'green';
+  }
+  const overage = -remaining;
+  return overage <= goal * 0.1 ? 'yellow' : 'red';
 }
 
 export function macroStatus(consumed, goal) {

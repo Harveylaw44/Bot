@@ -18,6 +18,8 @@ const KEYS = {
   timerSettings: 'fittrack_timer_settings',
   shoppingItems: 'fittrack_shopping_items',
   shoppingHistory: 'fittrack_shopping_history',
+  routineItems: 'fittrack_routine_items',
+  routineLog: 'fittrack_routine_log',
 };
 
 function read(key, fallback) {
@@ -462,6 +464,36 @@ export function deleteShoppingHistoryEntry(id) {
   return next;
 }
 
+// A daily routine is a fixed list of time-anchored steps (wake up, take
+// creatine, etc.) — the same list every day, sorted by time. Completion
+// is tracked per calendar date (like supplements) so ticking something
+// off today doesn't affect tomorrow's fresh checklist.
+const routineItemStore = makeStore(KEYS.routineItems, () => [
+  { time: '07:00', label: 'Wake up' },
+  { time: '07:05', label: 'Brush teeth' },
+  { time: '07:10', label: 'Take creatine with 750ml water' },
+].map((r) => ({ ...r, id: crypto.randomUUID() })));
+
+export const getRoutineItems = () =>
+  [...routineItemStore.getAll()].sort((a, b) => a.time.localeCompare(b.time));
+export const addRoutineItem = routineItemStore.add;
+export const updateRoutineItem = routineItemStore.update;
+export const deleteRoutineItem = routineItemStore.remove;
+
+export function getRoutineLog() {
+  return read(KEYS.routineLog, {});
+}
+
+export function toggleRoutineDone(date, itemId) {
+  const log = getRoutineLog();
+  const day = { ...(log[date] || {}) };
+  if (day[itemId]) delete day[itemId];
+  else day[itemId] = true;
+  const next = { ...log, [date]: day };
+  write(KEYS.routineLog, next);
+  return next;
+}
+
 export function exportAllData() {
   return {
     exportedAt: new Date().toISOString(),
@@ -481,6 +513,8 @@ export function exportAllData() {
     timerSettings: getTimerSettings(),
     shoppingItems: getShoppingItems(),
     shoppingHistory: getShoppingHistory(),
+    routineItems: getRoutineItems(),
+    routineLog: getRoutineLog(),
   };
 }
 
@@ -502,4 +536,6 @@ export function importAllData(data) {
   if (data.timerSettings) write(KEYS.timerSettings, data.timerSettings);
   if (data.shoppingItems) write(KEYS.shoppingItems, data.shoppingItems);
   if (data.shoppingHistory) write(KEYS.shoppingHistory, data.shoppingHistory);
+  if (data.routineItems) write(KEYS.routineItems, data.routineItems);
+  if (data.routineLog) write(KEYS.routineLog, data.routineLog);
 }
