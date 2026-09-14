@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MEASURE_UNITS, defaultServingAmount } from '../foodUnits.js';
 import { round1 } from '../utils.js';
 
@@ -33,28 +33,58 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [protein, carbs, fat, caloriesAuto]);
 
+  const scaleMacros = (ratio) => {
+    setProtein((p) => (p === '' ? p : round1(Number(p) * ratio)));
+    setCarbs((c) => (c === '' ? c : round1(Number(c) * ratio)));
+    setFat((f) => (f === '' ? f : round1(Number(f) * ratio)));
+    if (!caloriesAuto) {
+      setCalories((cal) => (cal === '' ? cal : String(Math.round(Number(cal) * ratio))));
+    }
+  };
+
+  const clearMacros = () => {
+    setProtein('');
+    setCarbs('');
+    setFat('');
+    setCalories('');
+    setCaloriesAuto(true);
+  };
+
+  // Baseline the amount-scaling math is measured against — updated
+  // whenever the amount settles on a new value, whether from typing or a
+  // unit switch, so the *next* change scales from wherever things
+  // actually are now rather than compounding against the original value.
+  const amountBaseline = useRef(Number(initial?.servingAmount) || defaultServingAmount('g'));
+
   const handleUnitChange = (nextUnit) => {
     setUnit(nextUnit);
     if (servingTouched) return;
 
-    // Switching units resets the reference amount to that unit's default
-    // (e.g. 100g -> 1 piece) — the macros were only ever true for the old
-    // amount, so they'd otherwise sit there unchanged and now mean
-    // something completely different (the same "165 cal" mislabelled from
-    // "per 100g" to "per 1 piece"). Scale them by the same ratio so they
-    // stay accurate for whatever amount is now shown.
     const nextAmount = defaultServingAmount(nextUnit);
     const prevAmount = Number(servingAmount) || 1;
-    const ratio = nextAmount / prevAmount;
     setServingAmount(String(nextAmount));
-    if (ratio !== 1) {
-      setProtein((p) => (p === '' ? p : round1(Number(p) * ratio)));
-      setCarbs((c) => (c === '' ? c : round1(Number(c) * ratio)));
-      setFat((f) => (f === '' ? f : round1(Number(f) * ratio)));
-      if (!caloriesAuto) {
-        setCalories((cal) => (cal === '' ? cal : String(Math.round(Number(cal) * ratio))));
-      }
+    amountBaseline.current = nextAmount;
+
+    if (nextAmount === prevAmount) return;
+    // Switching between a weight/volume unit (g/ml, 100-reference) and a
+    // count unit (tbsp/tsp/piece, 1-reference) has no real conversion we
+    // can invent — scaling by that raw amount ratio produced nonsense
+    // (e.g. a 300cal/100g bread becoming "3 cal" for "1 piece"). Clear
+    // the macros instead so the true per-unit values get entered fresh.
+    clearMacros();
+  };
+
+  // Amount edits within the SAME unit (e.g. 100g -> 50g) are simple,
+  // valid proportional scaling — applied once the number settles (on
+  // blur) rather than per keystroke, so typing "50" doesn't scale
+  // against each intermediate digit.
+  const handleAmountBlur = () => {
+    const newAmount = Number(servingAmount);
+    const baseline = amountBaseline.current;
+    if (newAmount > 0 && baseline > 0 && newAmount !== baseline) {
+      scaleMacros(newAmount / baseline);
     }
+    if (newAmount > 0) amountBaseline.current = newAmount;
   };
 
   const valid = name.trim() && Number(calories) > 0 && Number(servingAmount) > 0;
@@ -101,6 +131,7 @@ export default function IngredientFormSheet({ initial, onClose, onSave, onDelete
               setServingAmount(e.target.value);
               setServingTouched(true);
             }}
+            onBlur={handleAmountBlur}
             style={{ ...fieldStyle, marginBottom: 0, flex: 1 }}
           />
           <select
