@@ -475,8 +475,23 @@ const routineItemStore = makeStore(KEYS.routineItems, () => [
   { time: '07:10', label: 'Take creatine with 750ml water' },
 ].map((r) => ({ ...r, id: crypto.randomUUID() })));
 
+// Recurring blueprint steps only — a one-off step tagged with a specific
+// `date` (added "just for today") isn't part of the repeating routine, so
+// it's excluded here and doesn't affect the streak/consistency analytics,
+// which are all about the blueprint you follow every day.
 export const getRoutineItems = () =>
-  [...routineItemStore.getAll()].sort((a, b) => a.time.localeCompare(b.time));
+  [...routineItemStore.getAll()]
+    .filter((i) => !i.date)
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+// What actually shows on a given day: every recurring step, plus any
+// one-off steps added specifically for that date.
+export function getRoutineItemsForDate(date) {
+  return [...routineItemStore.getAll()]
+    .filter((i) => !i.date || i.date === date)
+    .sort((a, b) => a.time.localeCompare(b.time));
+}
+
 export const addRoutineItem = routineItemStore.add;
 export const updateRoutineItem = routineItemStore.update;
 export const deleteRoutineItem = routineItemStore.remove;

@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { todayISO } from '../storage.js';
 
 export default function RoutineItemFormSheet({ initial, onClose, onSave, onDelete }) {
   const [time, setTime] = useState(initial?.time || '08:00');
   const [label, setLabel] = useState(initial?.label || '');
+  const [oneOff, setOneOff] = useState(!!initial?.date);
 
   const valid = time && label.trim();
 
   const submit = () => {
     if (!valid) return;
-    onSave({ time, label: label.trim() });
+    onSave({ time, label: label.trim(), date: oneOff ? todayISO() : undefined });
   };
 
   return (
@@ -31,8 +33,25 @@ export default function RoutineItemFormSheet({ initial, onClose, onSave, onDelet
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           autoFocus
-          style={{ ...fieldStyle, marginBottom: 10 }}
+          style={fieldStyle}
         />
+
+        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-faint)', marginBottom: 8 }}>
+          REPEATS
+        </div>
+        <div className="segmented" style={{ margin: 0, marginBottom: 6 }}>
+          <button className={!oneOff ? 'active' : ''} onClick={() => setOneOff(false)}>
+            Every day
+          </button>
+          <button className={oneOff ? 'active' : ''} onClick={() => setOneOff(true)}>
+            Just today
+          </button>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-faint)', marginBottom: 14 }}>
+          {oneOff
+            ? "Only shows today, and won't count toward your routine streak."
+            : 'Shows every day and counts toward your routine streak.'}
+        </div>
 
         <button
           className="btn btn-primary btn-block"

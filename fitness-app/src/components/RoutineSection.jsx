@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   getRoutineItems,
+  getRoutineItemsForDate,
   addRoutineItem,
   updateRoutineItem,
   deleteRoutineItem,
@@ -23,7 +24,8 @@ function formatTimeLabel(time) {
 }
 
 export default function RoutineSection({ refreshTick, onDataChange }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([]); // today's checklist: recurring blueprint + any one-off steps
+  const [recurringCount, setRecurringCount] = useState(0); // blueprint size, for gating the streak card
   const [doneMap, setDoneMap] = useState({});
   const [last7, setLast7] = useState([]);
   const [streak, setStreak] = useState(0);
@@ -31,7 +33,8 @@ export default function RoutineSection({ refreshTick, onDataChange }) {
   const date = todayISO();
 
   useEffect(() => {
-    setItems(getRoutineItems());
+    setItems(getRoutineItemsForDate(date));
+    setRecurringCount(getRoutineItems().length);
     setDoneMap(getRoutineLog()[date] || {});
     setLast7(getRoutineLastNDays(7));
     setStreak(getRoutineStreak());
@@ -131,6 +134,9 @@ export default function RoutineSection({ refreshTick, onDataChange }) {
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-faint)', marginTop: 2 }}>
                   {formatTimeLabel(item.time)}
+                  {item.date && (
+                    <span style={{ color: 'var(--blue)', fontWeight: 700 }}> · Today only</span>
+                  )}
                 </div>
               </button>
 
@@ -142,7 +148,7 @@ export default function RoutineSection({ refreshTick, onDataChange }) {
         })
       )}
 
-      {items.length > 0 && (
+      {recurringCount > 0 && (
         <div className="card" style={{ marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <IconFire style={{ width: 18, height: 18, color: 'var(--yellow)' }} />
