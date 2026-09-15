@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLog, getSettings, getWorkoutCompleted, todayISO } from '../storage.js';
+import { getLog, getSettings, getWorkoutCompleted, getRoutineItems, getRoutineLog, todayISO } from '../storage.js';
 import { calorieStatus } from '../utils.js';
 import DayDetailSheet from './DayDetailSheet.jsx';
 
@@ -19,12 +19,16 @@ export default function CalendarSection({ refreshTick }) {
   const [log, setLog] = useState({});
   const [completed, setCompleted] = useState({});
   const [settings, setSettings] = useState(getSettings());
+  const [routineItems, setRoutineItems] = useState([]);
+  const [routineLog, setRoutineLog] = useState({});
   const [selectedDate, setSelectedDate] = useState(null);
 
   useEffect(() => {
     setLog(getLog());
     setCompleted(getWorkoutCompleted());
     setSettings(getSettings());
+    setRoutineItems(getRoutineItems());
+    setRoutineLog(getRoutineLog());
   }, [refreshTick]);
 
   const today = todayISO();
@@ -55,6 +59,12 @@ export default function CalendarSection({ refreshTick }) {
   const cells = [];
   for (let i = 0; i < startOffset; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(dateKey(viewYear, viewMonth, d));
+
+  const routineFullyDone = (date) => {
+    if (routineItems.length === 0) return false;
+    const day = routineLog[date] || {};
+    return routineItems.every((i) => day[i.id]);
+  };
 
   const dayStatus = (date) => {
     const entries = log[date] || [];
@@ -97,6 +107,7 @@ export default function CalendarSection({ refreshTick }) {
           const isFuture = date > today;
           const status = dayStatus(date);
           const workoutDone = !!completed[date];
+          const routineDone = routineFullyDone(date);
           const bg = status ? `var(--${status}-dim)` : 'var(--bg-elevated)';
           const color = status ? `var(--${status})` : 'var(--text-faint)';
           return (
@@ -112,11 +123,29 @@ export default function CalendarSection({ refreshTick }) {
               }}
             >
               {Number(date.slice(8, 10))}
-              {workoutDone && <span className="dot" />}
+              {(workoutDone || routineDone) && (
+                <div style={{ display: 'flex', gap: 3 }}>
+                  {workoutDone && <span className="dot" />}
+                  {routineDone && <span className="dot" style={{ background: 'var(--blue)' }} />}
+                </div>
+              )}
             </button>
           );
         })}
       </div>
+
+      {routineItems.length > 0 && (
+        <div style={{ display: 'flex', gap: 14, marginTop: 12, fontSize: 11, color: 'var(--text-faint)' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span className="dot" style={{ background: 'currentColor', position: 'static' }} />
+            Workout
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span className="dot" style={{ background: 'var(--blue)', position: 'static' }} />
+            Routine
+          </span>
+        </div>
+      )}
 
       {selectedDate && <DayDetailSheet date={selectedDate} onClose={() => setSelectedDate(null)} />}
     </div>

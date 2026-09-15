@@ -5,6 +5,7 @@ import {
   getWorkoutCompleted,
   getWeights,
   getWaterTotalForDate,
+  getRoutineCompletionForDate,
 } from '../storage.js';
 import { formatDateLabel, formatMl, kgToLbs, round1 } from '../utils.js';
 
@@ -22,6 +23,7 @@ export default function DayDetailSheet({ date, onClose }) {
   const workoutDone = !!getWorkoutCompleted()[date];
   const weightEntry = getWeights().find((w) => w.date === date);
   const water = getWaterTotalForDate(date);
+  const routine = getRoutineCompletionForDate(date);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -62,6 +64,24 @@ export default function DayDetailSheet({ date, onClose }) {
             {workout !== 'Rest Day' && workoutDone ? ' ✓' : ''}
           </span>
         </div>
+
+        {routine.total > 0 && (
+          <div
+            className="card"
+            style={{
+              marginBottom: 10,
+              background: 'var(--bg-elevated)',
+              display: 'flex',
+              justifyContent: 'space-between',
+            }}
+          >
+            <span style={{ color: 'var(--text-dim)', fontSize: 14 }}>Routine</span>
+            <span style={{ fontWeight: 700, color: routine.done === routine.total ? 'var(--green)' : 'var(--text)' }}>
+              {routine.done} / {routine.total}
+              {routine.done === routine.total ? ' ✓' : ''}
+            </span>
+          </div>
+        )}
 
         {weightEntry && (
           <div

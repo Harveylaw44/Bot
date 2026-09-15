@@ -6,11 +6,14 @@ import {
   deleteRoutineItem,
   getRoutineLog,
   toggleRoutineDone,
+  getRoutineLastNDays,
+  getRoutineStreak,
   todayISO,
 } from '../storage.js';
 import { EmptyState } from './shared.jsx';
 import RoutineItemFormSheet from './RoutineItemFormSheet.jsx';
-import { IconCheck, IconPencil, IconPlus } from './icons.jsx';
+import { IconCheck, IconPencil, IconPlus, IconFire } from './icons.jsx';
+import { formatDay } from '../utils.js';
 
 function formatTimeLabel(time) {
   const [h, m] = time.split(':').map(Number);
@@ -22,12 +25,16 @@ function formatTimeLabel(time) {
 export default function RoutineSection({ refreshTick, onDataChange }) {
   const [items, setItems] = useState([]);
   const [doneMap, setDoneMap] = useState({});
+  const [last7, setLast7] = useState([]);
+  const [streak, setStreak] = useState(0);
   const [sheet, setSheet] = useState(null); // { item?: routineItem } | null
   const date = todayISO();
 
   useEffect(() => {
     setItems(getRoutineItems());
     setDoneMap(getRoutineLog()[date] || {});
+    setLast7(getRoutineLastNDays(7));
+    setStreak(getRoutineStreak());
   }, [refreshTick]);
 
   const doneCount = items.filter((i) => doneMap[i.id]).length;
@@ -133,6 +140,35 @@ export default function RoutineSection({ refreshTick, onDataChange }) {
             </div>
           );
         })
+      )}
+
+      {items.length > 0 && (
+        <div className="card" style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <IconFire style={{ width: 18, height: 18, color: 'var(--yellow)' }} />
+            <span style={{ fontWeight: 700, fontSize: 14.5 }}>
+              {streak} day streak
+            </span>
+          </div>
+          <div className="week-strip">
+            {last7.map((day) => {
+              const full = day.total > 0 && day.done === day.total;
+              const partial = day.done > 0 && !full;
+              return (
+                <div className="day" key={day.date}>
+                  <div
+                    className={`dot${full ? ' taken' : ''}`}
+                    style={partial ? { background: 'var(--yellow-dim)', borderColor: 'var(--yellow)' } : undefined}
+                    title={`${day.done} / ${day.total}`}
+                  >
+                    {full && <IconCheck />}
+                  </div>
+                  <span className="label">{formatDay(day.date)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       <button

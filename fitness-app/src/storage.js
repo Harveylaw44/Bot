@@ -495,6 +495,45 @@ export function toggleRoutineDone(date, itemId) {
   return next;
 }
 
+// How many of today's routine steps got checked off on a given date —
+// measured against the CURRENT routine list, so if steps are added or
+// removed later, past days are read against today's list rather than a
+// snapshot of what the routine looked like back then (same simplification
+// the gym streak already makes for an evolving workout cycle).
+export function getRoutineCompletionForDate(date) {
+  const items = getRoutineItems();
+  const day = getRoutineLog()[date] || {};
+  const done = items.filter((i) => day[i.id]).length;
+  return { done, total: items.length };
+}
+
+export function getRoutineLastNDays(n) {
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const date = todayISO(-i);
+    days.push({ date, ...getRoutineCompletionForDate(date) });
+  }
+  return days;
+}
+
+// A day only counts toward the streak if there were steps to do AND every
+// one of them got checked off — partial days break it just like a missed
+// one. Same "today isn't over yet" carve-out as the other streaks.
+export function getRoutineStreak() {
+  if (getRoutineItems().length === 0) return 0;
+  const isFullyDone = (date) => {
+    const { done, total } = getRoutineCompletionForDate(date);
+    return total > 0 && done === total;
+  };
+  const startOffset = isFullyDone(todayISO()) ? 0 : 1;
+  let streak = 0;
+  for (let i = startOffset; i < MAX_STREAK_LOOKBACK; i++) {
+    if (isFullyDone(todayISO(-i))) streak++;
+    else break;
+  }
+  return streak;
+}
+
 export function exportAllData() {
   return {
     exportedAt: new Date().toISOString(),
