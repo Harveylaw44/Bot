@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
 import { getLog, getSettings, getWorkoutCompleted, getRoutineItems, getRoutineLog, todayISO } from '../storage.js';
-import { calorieStatus } from '../utils.js';
+import { calorieStatus, localDateISO } from '../utils.js';
 import DayDetailSheet from './DayDetailSheet.jsx';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// Matches storage.js#todayISO's convention (Date -> toISOString -> slice)
-// so grid cells key into the same log/completed maps that entries are
-// actually stored under.
+// Matches storage.js#todayISO's convention so grid cells key into the same
+// log/completed maps that entries are actually stored under.
 function dateKey(year, month, day) {
-  return new Date(year, month, day).toISOString().slice(0, 10);
+  return localDateISO(new Date(year, month, day));
 }
 
 export default function CalendarSection({ refreshTick }) {

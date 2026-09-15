@@ -1,6 +1,8 @@
 // Thin localStorage wrapper. Every read is defensive (corrupt/missing data
 // never crashes the app, it just falls back to a sane default).
 
+import { localDateISO } from './utils.js';
+
 const KEYS = {
   settings: 'fittrack_settings',
   log: 'fittrack_log',
@@ -60,13 +62,13 @@ export const DEFAULT_SETTINGS = {
 // falls, so any date's workout is (days since anchor) mod steps.length.
 export const DEFAULT_WORKOUT_CYCLE = {
   steps: ['Chest & Biceps', 'Back', 'Rest Day', 'Legs', 'Shoulders & Triceps', 'Rest Day'],
-  anchorDate: new Date().toISOString().slice(0, 10),
+  anchorDate: localDateISO(new Date()),
 };
 
 export function todayISO(offsetDays = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  return localDateISO(d);
 }
 
 export function getSettings() {

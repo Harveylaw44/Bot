@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IconChevronUp, IconChevronDown, IconX, IconPlus } from './icons.jsx';
+import { localDateISO } from '../utils.js';
 
 function computeTodayIndex(steps, anchorDate) {
   if (!steps.length) return 0;
@@ -37,7 +38,7 @@ export default function WorkoutCycleSheet({ initial, onClose, onSave }) {
     const anchor = new Date();
     anchor.setHours(0, 0, 0, 0);
     anchor.setDate(anchor.getDate() - idx);
-    onSave({ steps: cleanSteps, anchorDate: anchor.toISOString().slice(0, 10) });
+    onSave({ steps: cleanSteps, anchorDate: localDateISO(anchor) });
   };
 
   return (

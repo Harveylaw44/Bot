@@ -1,3 +1,17 @@
+// The local calendar-day string (YYYY-MM-DD) for a Date object. Never use
+// Date#toISOString() for this — it converts to UTC first, which can shift
+// the date by a day in either direction depending on the timezone's UTC
+// offset (most visibly right around local midnight), even when the Date
+// itself was built from correct local components. Every calendar-date
+// string in this app (today, log entries, workout rotation anchor, etc.)
+// goes through this one function so they all agree on the same day.
+export function localDateISO(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 // green / yellow / red status against a goal-based remaining value. Being
 // a little over isn't a crisis — within the same 10% margin that turns
 // the approach to the goal yellow, going over stays yellow too. Red is
