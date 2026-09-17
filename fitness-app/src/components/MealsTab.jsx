@@ -17,6 +17,7 @@ import {
 import { computeMealNutrition } from '../mealCalc.js';
 import { DeleteButton, EmptyState } from './shared.jsx';
 import IngredientFormSheet from './IngredientFormSheet.jsx';
+import LogIngredientSheet from './LogIngredientSheet.jsx';
 import MealFormSheet from './MealFormSheet.jsx';
 import FoodDatabaseSearchSheet from './FoodDatabaseSearchSheet.jsx';
 import { IconPencil, IconPlus, IconSearch } from './icons.jsx';
@@ -33,6 +34,7 @@ export default function MealsTab({ refreshTick, onDataChange }) {
   const [ingredients, setIngredients] = useState([]);
   const [justAdded, setJustAdded] = useState(null);
   const [sheet, setSheet] = useState(null); // { item?: meal/ingredient } | null
+  const [logSheet, setLogSheet] = useState(null); // ingredient being logged at a custom amount, or null
   const [dbSearch, setDbSearch] = useState(false);
   const date = todayISO();
 
@@ -70,6 +72,27 @@ export default function MealsTab({ refreshTick, onDataChange }) {
     });
     setJustAdded(food.id);
     setTimeout(() => setJustAdded(null), 350);
+    onDataChange();
+  };
+
+  // Logs an ingredient at whatever amount was entered in LogIngredientSheet
+  // rather than its full reference serving — a standalone log entry, not a
+  // meal edit, so topping up ("extra 20g of oats") doesn't require touching
+  // any meal's recipe. The amount is folded into the entry's name so the
+  // log reads clearly (e.g. "Oats (20g)") even though the ingredient itself
+  // is always defined per its reference serving.
+  const handleLogIngredient = (ingredient, amount, nutrition) => {
+    addEntry(date, {
+      type: 'meal',
+      name: `${ingredient.name} (${amount}${ingredient.unit})`,
+      calories: Math.round(nutrition.calories),
+      protein: nutrition.protein,
+      carbs: nutrition.carbs,
+      fat: nutrition.fat,
+    });
+    setJustAdded(ingredient.id);
+    setTimeout(() => setJustAdded(null), 350);
+    setLogSheet(null);
     onDataChange();
   };
 
@@ -189,7 +212,7 @@ export default function MealsTab({ refreshTick, onDataChange }) {
               }}
             >
               <button
-                onClick={() => handleLog(food, nutrition)}
+                onClick={() => (isMealsTab ? handleLog(food, nutrition) : setLogSheet(food))}
                 style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
@@ -312,6 +335,14 @@ export default function MealsTab({ refreshTick, onDataChange }) {
 
       {dbSearch && (
         <FoodDatabaseSearchSheet onClose={() => setDbSearch(false)} onPick={handlePickFromDatabase} />
+      )}
+
+      {logSheet && (
+        <LogIngredientSheet
+          ingredient={logSheet}
+          onClose={() => setLogSheet(null)}
+          onLog={(amount, nutrition) => handleLogIngredient(logSheet, amount, nutrition)}
+        />
       )}
     </>
   );
