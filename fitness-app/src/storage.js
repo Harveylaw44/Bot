@@ -276,7 +276,92 @@ const supplementStore = makeStore(KEYS.supplements, () => [
   { name: 'Creatine', amount: 5, unit: 'g' },
 ].map((s) => ({ ...s, id: crypto.randomUUID() })));
 
-export const getMeals = mealStore.getAll;
+// One-time backfill of the user's own hand-tallied 5-meal bulk plan. Seed
+// data (above) only ever runs for a brand-new install with no existing
+// meals — an existing user's already-populated store needs this same
+// migrate-and-persist pattern getIngredients() uses below, checked by name
+// so it only ever gets added once. Every item's macros are the user's own
+// stated numbers (fixed 'custom' lines, no ingredient-scaling drift); Egg
+// and Banana link to the real ingredient library since their per-piece
+// values already match exactly, with a literal fallback if either was
+// ever deleted from the library.
+const BULK_PLAN_MARKER = 'Sourdough + Eggs (12:30pm)';
+
+function ensureBulkPlanMeals() {
+  const meals = mealStore.getAll();
+  if (meals.some((m) => m.name === BULK_PLAN_MARKER)) return;
+
+  const ingredients = ingredientStore.getAll();
+  const idOf = (name) => ingredients.find((i) => i.name === name)?.id;
+  const eggId = idOf('Egg');
+  const bananaId = idOf('Banana');
+
+  const custom = (name, calories, protein, carbs, fat) => ({ type: 'custom', name, calories, protein, carbs, fat });
+  const eggsItem = eggId ? { type: 'ingredient', ingredientId: eggId, quantity: 3 } : custom('3 Eggs', 234, 18, 1.8, 15);
+  const bananaItem = bananaId
+    ? { type: 'ingredient', ingredientId: bananaId, quantity: 1 }
+    : custom('1 Banana', 105, 1.3, 27, 0.4);
+
+  const bulkMeals = [
+    {
+      name: 'Sourdough + Eggs (12:30pm)',
+      category: 'lunch',
+      items: [eggsItem, custom("3 slices Jason's Sourdough", 201, 9, 40.2, 1.5)],
+    },
+    {
+      name: 'Oats + Milk + Honey + Banana (1:30pm)',
+      category: 'breakfast',
+      items: [
+        custom('60g Oats (dry)', 233, 10.2, 39.6, 4.2),
+        bananaItem,
+        custom('300ml Whole Milk + 1 tbsp Honey', 247, 7.5, 28.4, 7.9),
+      ],
+    },
+    {
+      name: 'Chicken & Rice (5pm)',
+      category: 'dinner',
+      items: [
+        custom('170g Raw Chicken Breast', 280, 33, 0, 8),
+        custom('Microwave Rice Bag (90g dry)', 330, 4, 73, 9),
+      ],
+    },
+    {
+      name: 'Beef Bolognese Pasta (5pm, rotation)',
+      category: 'dinner',
+      items: [
+        custom('110g Cooked Minced Beef', 210, 24, 0, 10.5),
+        custom('50g Pasta (dry)', 180, 6, 35, 1),
+        custom('Bolognese Sauce', 35, 1, 0, 3),
+      ],
+    },
+    {
+      name: 'Tuna Pasta with Mayo & Yogurt (7:30pm)',
+      category: 'dinner',
+      items: [
+        custom('80g Greek Yogurt (0% fat)', 47, 8, 3, 0.3),
+        custom('2 tins Tuna (drained, spring water)', 260, 50, 0, 2),
+        custom('50g Pasta (dry)', 180, 5, 34, 1),
+        custom('30g Mayo', 158, 0, 0, 23.7),
+      ],
+    },
+    {
+      name: 'Yogurt Bowl with Dark Chocolate (10:30pm)',
+      category: 'snack',
+      items: [
+        bananaItem,
+        custom('150g Greek Yogurt (0% fat)', 88, 15, 5.4, 0.6),
+        custom('20ml Honey + 20g Dark Chocolate', 174, 2.2, 26.1, 6.3),
+      ],
+    },
+  ].map((m) => ({ ...m, id: crypto.randomUUID() }));
+
+  write(KEYS.meals, [...meals, ...bulkMeals]);
+}
+
+export function getMeals() {
+  ensureBulkPlanMeals();
+  return mealStore.getAll();
+}
 export const addMeal = mealStore.add;
 export const updateMeal = mealStore.update;
 export const deleteMeal = mealStore.remove;
