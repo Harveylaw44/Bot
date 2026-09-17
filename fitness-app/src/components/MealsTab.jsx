@@ -201,99 +201,109 @@ export default function MealsTab({ refreshTick, onDataChange }) {
           return (
             <div
               key={food.id}
-              className="card"
+              className="list-row"
               style={{
-                marginBottom: 10,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                border: justAdded === food.id ? '1px solid var(--green)' : '1px solid var(--border)',
+                borderColor: justAdded === food.id ? 'var(--green)' : undefined,
                 transition: 'border-color 0.2s ease',
               }}
             >
               <button
                 onClick={() => (isMealsTab ? handleLog(food, nutrition) : setLogSheet(food))}
-                style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0 }}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ fontWeight: 700, fontSize: 15.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {food.name}
-                  </span>
-                  <span style={{ fontWeight: 700, color: 'var(--green)', flexShrink: 0 }}>
-                    {Math.round(nutrition.calories)} cal
-                  </span>
+                <div className="main">
+                  <div className="title">{food.name}</div>
+                  <div className="sub">
+                    {!categoryFilter && food.category && (
+                      <span style={{ color: 'var(--green)', fontWeight: 700 }}>{categoryLabel(food.category)} · </span>
+                    )}
+                    P{Math.round(nutrition.protein)} · C{Math.round(nutrition.carbs)} · F{Math.round(nutrition.fat)}g
+                  </div>
                 </div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: 4 }}>
-                  {!categoryFilter && food.category && (
-                    <span style={{ color: 'var(--green)', fontWeight: 700 }}>{categoryLabel(food.category)} · </span>
-                  )}
-                  P {Math.round(nutrition.protein)}g · C {Math.round(nutrition.carbs)}g · F {Math.round(nutrition.fat)}g
-                  {!isMealsTab && ` · per ${food.servingAmount}${food.unit}`}
-                  {isMealsTab && Array.isArray(food.items) && ` · ${food.items.length} ingredient${food.items.length === 1 ? '' : 's'}`}
-                </div>
+                <span className="amount" style={{ color: 'var(--green)', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                  {Math.round(nutrition.calories)} cal
+                </span>
               </button>
-              <button className="icon-btn" onClick={() => openEdit(food)} aria-label="Edit">
-                <IconPencil />
+              <button className="icon-btn" onClick={() => openEdit(food)} aria-label="Edit" style={{ width: 28, height: 28 }}>
+                <IconPencil style={{ width: 14, height: 14 }} />
               </button>
             </div>
           );
         })
       )}
 
-      <button
-        className="btn btn-secondary btn-block"
-        onClick={openAdd}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: isMealsTab ? 4 : 10 }}
-      >
-        <IconPlus style={{ width: 16, height: 16 }} />
-        Add {isMealsTab ? 'Meal' : 'Ingredient'}
-      </button>
-
-      {!isMealsTab && (
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         <button
-          className="btn btn-block"
-          onClick={() => setDbSearch(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            marginBottom: 4,
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border)',
-          }}
+          className="btn btn-secondary"
+          onClick={openAdd}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
         >
-          <IconSearch style={{ width: 16, height: 16 }} />
-          Search Food Database
+          <IconPlus style={{ width: 16, height: 16 }} />
+          Add {isMealsTab ? 'Meal' : 'Ingredient'}
         </button>
-      )}
+
+        {!isMealsTab && (
+          <button
+            className="btn"
+            onClick={() => setDbSearch(true)}
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+            }}
+          >
+            <IconSearch style={{ width: 16, height: 16 }} />
+            Search
+          </button>
+        )}
+      </div>
 
       <div className="section-label">Today's Total</div>
-      <div className="card" style={{ marginBottom: 18 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-          <span style={{ color: 'var(--text-dim)' }}>Calories</span>
-          <span style={{ fontWeight: 700 }}>
-            {totals.calories} / {settings.calorieGoal} cal
-          </span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginTop: 6 }}>
-          <span style={{ color: 'var(--text-dim)' }}>Protein</span>
-          <span style={{ fontWeight: 700 }}>
-            {Math.round(totals.protein)} / {settings.proteinGoal}g
-          </span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginTop: 6 }}>
-          <span style={{ color: 'var(--text-dim)' }}>Carbs</span>
-          <span style={{ fontWeight: 700 }}>
-            {Math.round(totals.carbs)} / {settings.carbGoal}g
-          </span>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginTop: 6 }}>
-          <span style={{ color: 'var(--text-dim)' }}>Fat</span>
-          <span style={{ fontWeight: 700 }}>
-            {Math.round(totals.fat)} / {settings.fatGoal}g
-          </span>
-        </div>
+      <div className="card" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 18 }}>
+        {[
+          ['Calories', totals.calories, settings.calorieGoal, ''],
+          ['Protein', Math.round(totals.protein), settings.proteinGoal, 'g'],
+          ['Carbs', Math.round(totals.carbs), settings.carbGoal, 'g'],
+          ['Fat', Math.round(totals.fat), settings.fatGoal, 'g'],
+        ].map(([label, value, goal, unit]) => (
+          <div key={label} style={{ textAlign: 'center' }}>
+            <div
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: 'var(--text-faint)',
+                textTransform: 'uppercase',
+                letterSpacing: 0.3,
+                marginBottom: 4,
+              }}
+            >
+              {label}
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>
+              {value}
+              {unit}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-faint)' }}>
+              / {goal}
+              {unit}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="section-label">Log</div>
