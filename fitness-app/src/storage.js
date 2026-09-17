@@ -79,8 +79,18 @@ export function saveSettings(settings) {
   write(KEYS.settings, settings);
 }
 
+// Seeds and persists the default cycle on first-ever read, same as
+// makeStore does for meals/ingredients/etc. Without this, the default's
+// anchorDate (computed at import time, i.e. "now") would get silently
+// recomputed to "today" on every fresh app launch for anyone who hasn't
+// explicitly saved a split — pinning the rotation to Day 1 forever and
+// making it look like it never advances.
 export function getWorkoutCycle() {
-  return { ...DEFAULT_WORKOUT_CYCLE, ...read(KEYS.workoutCycle, {}) };
+  const existing = read(KEYS.workoutCycle, null);
+  if (existing) return { ...DEFAULT_WORKOUT_CYCLE, ...existing };
+  const seeded = { ...DEFAULT_WORKOUT_CYCLE };
+  write(KEYS.workoutCycle, seeded);
+  return seeded;
 }
 
 export function saveWorkoutCycle(cycle) {
