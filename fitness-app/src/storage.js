@@ -279,17 +279,50 @@ const supplementStore = makeStore(KEYS.supplements, () => [
 // One-time backfill of the user's own hand-tallied 5-meal bulk plan. Seed
 // data (above) only ever runs for a brand-new install with no existing
 // meals — an existing user's already-populated store needs this same
-// migrate-and-persist pattern getIngredients() uses below, checked by name
-// so it only ever gets added once. Every item's macros are the user's own
-// stated numbers (fixed 'custom' lines, no ingredient-scaling drift); Egg
-// and Banana link to the real ingredient library since their per-piece
-// values already match exactly, with a literal fallback if either was
-// ever deleted from the library.
-const BULK_PLAN_MARKER = 'Sourdough + Eggs (12:30pm)';
+// migrate-and-persist pattern getIngredients() uses below. Every item's
+// macros are the user's own stated numbers (fixed 'custom' lines, no
+// ingredient-scaling drift); Egg and Banana link to the real ingredient
+// library since their per-piece values already match exactly, with a
+// literal fallback if either was ever deleted from the library.
+//
+// Guarded by a stable `bulkPlanId` tag on each meal, not its display name —
+// an earlier version of this checked the name instead, which broke (and
+// re-added all six) if a meal ever got renamed. BULK_PLAN_NAMES below is
+// only used once, to clean up any duplicates that earlier version already
+// created and tag the survivors with the stable id, so renaming a meal is
+// safe from here on.
+const BULK_PLAN_ID = 'bulk-5-meal-v1';
+const BULK_PLAN_NAMES = [
+  'Sourdough + Eggs (12:30pm)',
+  'Oats + Milk + Honey + Banana (1:30pm)',
+  'Chicken & Rice (5pm)',
+  'Beef Bolognese Pasta (5pm, rotation)',
+  'Tuna Pasta with Mayo & Yogurt (7:30pm)',
+  'Yogurt Bowl with Dark Chocolate (10:30pm)',
+];
 
 function ensureBulkPlanMeals() {
-  const meals = mealStore.getAll();
-  if (meals.some((m) => m.name === BULK_PLAN_MARKER)) return;
+  let meals = mealStore.getAll();
+
+  const seenBulkNames = new Set();
+  let changed = false;
+  meals = meals.filter((m) => {
+    if (!BULK_PLAN_NAMES.includes(m.name)) return true;
+    if (seenBulkNames.has(m.name)) {
+      changed = true;
+      return false;
+    }
+    seenBulkNames.add(m.name);
+    return true;
+  });
+  meals = meals.map((m) => {
+    if (m.bulkPlanId || !BULK_PLAN_NAMES.includes(m.name)) return m;
+    changed = true;
+    return { ...m, bulkPlanId: BULK_PLAN_ID };
+  });
+  if (changed) write(KEYS.meals, meals);
+
+  if (meals.some((m) => m.bulkPlanId === BULK_PLAN_ID)) return;
 
   const ingredients = ingredientStore.getAll();
   const idOf = (name) => ingredients.find((i) => i.name === name)?.id;
@@ -353,7 +386,7 @@ function ensureBulkPlanMeals() {
         custom('20ml Honey + 20g Dark Chocolate', 174, 2.2, 26.1, 6.3),
       ],
     },
-  ].map((m) => ({ ...m, id: crypto.randomUUID() }));
+  ].map((m) => ({ ...m, id: crypto.randomUUID(), bulkPlanId: BULK_PLAN_ID }));
 
   write(KEYS.meals, [...meals, ...bulkMeals]);
 }
