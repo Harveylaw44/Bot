@@ -8,6 +8,7 @@ import {
   getShoppingHistory,
   completeShop,
   deleteShoppingHistoryEntry,
+  getIngredients,
 } from '../storage.js';
 import { DeleteButton, EmptyState } from './shared.jsx';
 import ShoppingItemFormSheet from './ShoppingItemFormSheet.jsx';
@@ -18,13 +19,36 @@ const fmt = (n) => `£${(Number(n) || 0).toFixed(2)}`;
 export default function ShopTab({ refreshTick, onDataChange }) {
   const [items, setItems] = useState([]);
   const [history, setHistory] = useState([]);
+  const [ingredients, setIngredients] = useState([]);
   const [sheet, setSheet] = useState(null); // { item?: item } | null
   const [status, setStatus] = useState(null);
+  const [quickAdd, setQuickAdd] = useState('');
 
   useEffect(() => {
     setItems(getShoppingItems());
     setHistory(getShoppingHistory());
+    setIngredients(getIngredients());
   }, [refreshTick]);
+
+  // Ingredients you already track that aren't on the list yet — a nudge for
+  // the staples you regularly eat but forget to add when building the list,
+  // not a suggestion for one-off items.
+  const suggestions = ingredients.filter(
+    (ing) => !items.some((it) => it.name.trim().toLowerCase() === ing.name.trim().toLowerCase())
+  );
+
+  const addByName = (name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    addShoppingItem({ name: trimmed, price: '', note: '' });
+    onDataChange();
+  };
+
+  const handleQuickAdd = () => {
+    if (!quickAdd.trim()) return;
+    addByName(quickAdd);
+    setQuickAdd('');
+  };
 
   const checkedItems = items.filter((i) => i.checked);
   const totalAll = items.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
@@ -43,12 +67,10 @@ export default function ShopTab({ refreshTick, onDataChange }) {
     onDataChange();
   };
 
-  const openAdd = () => setSheet({ item: null });
   const openEdit = (item) => setSheet({ item });
 
   const handleSave = (values) => {
-    if (sheet.item) updateShoppingItem(sheet.item.id, values);
-    else addShoppingItem(values);
+    updateShoppingItem(sheet.item.id, values);
     setSheet(null);
     onDataChange();
   };
@@ -102,6 +124,48 @@ export default function ShopTab({ refreshTick, onDataChange }) {
       </div>
 
       <div className="section-label">Your List</div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <input
+          type="text"
+          placeholder="Add an item..."
+          value={quickAdd}
+          onChange={(e) => setQuickAdd(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleQuickAdd();
+          }}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 10,
+            padding: '12px 14px',
+            color: 'var(--text)',
+            fontSize: 15,
+          }}
+        />
+        <button
+          className="btn btn-primary"
+          onClick={handleQuickAdd}
+          disabled={!quickAdd.trim()}
+          aria-label="Add item"
+          style={{ opacity: quickAdd.trim() ? 1 : 0.5, padding: '0 18px', display: 'flex', alignItems: 'center' }}
+        >
+          <IconPlus style={{ width: 18, height: 18 }} />
+        </button>
+      </div>
+
+      {suggestions.length > 0 && (
+        <div className="chip-row" style={{ marginBottom: 14 }}>
+          {suggestions.map((ing) => (
+            <button key={ing.id} className="chip" onClick={() => addByName(ing.name)}>
+              + {ing.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {items.length === 0 ? (
         <EmptyState>Nothing on your list yet — add your first item below</EmptyState>
       ) : (
@@ -167,15 +231,6 @@ export default function ShopTab({ refreshTick, onDataChange }) {
           </div>
         ))
       )}
-
-      <button
-        className="btn btn-secondary btn-block"
-        onClick={openAdd}
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 14 }}
-      >
-        <IconPlus style={{ width: 16, height: 16 }} />
-        Add Item
-      </button>
 
       <button
         className="btn btn-primary btn-block"
